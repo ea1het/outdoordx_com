@@ -1,2 +1,1 @@
-# outdoordx_com
-Outdoor DX
+# outdoordx.com
