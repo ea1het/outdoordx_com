@@ -2,14 +2,11 @@
 
 // ── Config ──────────────────────────────────────────────────────────────────
 // Resolution order:
-//   1. ?bff=<url> query param  (explicit override, any environment)
-//   2. localhost / 127.0.0.1   → local BFF on port 9000
-//   3. production              → bff.outdoordx.net
+//   1. localhost / 127.0.0.1   → local BFF on port 9000
+//   2. production              → bff.outdoordx.net
 const BFF_URL = (function () {
-  const param = new URLSearchParams(window.location.search).get('bff');
-  if (param) return param;
   const h = window.location.hostname;
-  if (h === 'localhost' || h === '127.0.0.1' || h === '') {
+  if (h === 'localhost' || h === '127.0.0.1') {
     return 'http://localhost:9000/stream';
   }
   return 'https://bff.outdoordx.net/stream';
@@ -260,36 +257,51 @@ function refsText(spot) {
   return (spot.references || []).join(', ');
 }
 
-function escapeHtml(v) {
+function sanitizeCallsignForText(v) {
   return String(v || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+    .toUpperCase()
+    .replace(/[^A-Z0-9/ -]/g, '')
+    .trim();
+}
+
+function sanitizeCallsignForUrl(v) {
+  return String(v || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9/]/g, '')
+    .trim();
+}
+
+function sanitizeReferenceForUrl(v) {
+  return String(v || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9/-]/g, '')
+    .trim();
+}
+
+function safeText(v) {
+  const t = String(v || '').trim();
+  return t || '—';
+}
+
+function countryFlagEmoji(cc) {
+  const code = String(cc || '').toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return '';
+  const base = 127397;
+  return String.fromCodePoint(code.charCodeAt(0) + base)
+       + String.fromCodePoint(code.charCodeAt(1) + base);
 }
 
 function referenceUrl(source, ref) {
-  const rawRef = ref || '';
-  const safeRef = encodeURIComponent(rawRef);
+  const cleanRef = sanitizeReferenceForUrl(ref);
+  if (!cleanRef) return '';
+  const safeRef = encodeURIComponent(cleanRef);
   switch (source) {
     case 'POTA':   return `https://pota.app/#/park/${safeRef}`;
     case 'SOTA':   return `https://www.sotadata.org.uk/en/summit/${safeRef.replaceAll('%2F', '/')}`;
-    case 'WWFF':   return `https://wwff.co/directory/?showRef=${safeRef}`;
+    case 'WWFF':   return `https://spots.wwff.co/references/direct?wwff=${safeRef}`;
     case 'WWBOTA': return `https://wwbota.org/?s=${safeRef}`;
     default:       return '';
   }
-}
-
-function referencesHtml(spot) {
-  const refs = spot.references || [];
-  if (!refs.length) return '—';
-  return refs.map(ref => {
-    const href = referenceUrl(spot.source, ref);
-    const label = escapeHtml(ref);
-    if (!href) return `<span>${label}</span>`;
-    return `<a class="ref-link" href="${href}" target="_blank" rel="noopener">${label}</a>`;
-  }).join(', ');
 }
 
 function normText(v) {
@@ -345,28 +357,109 @@ function buildRow(spot) {
 
   if (spot.status === 'qrt') tr.classList.add('status-qrt');
 
-  const src   = sourceClass(spot.source);
-  const refs  = refsText(spot) || '—';
-  const refsHtml = referencesHtml(spot);
+  const src = sourceClass(spot.source);
+  const sourceText = safeText(spot.source);
+  const bandText = safeText(spot.band);
+  const modeText = safeText(spot.mode);
+  const contText = safeText(spot.continent);
+  const nameText = safeText(spot.name);
+  const modeCls = normText(spot.mode_class || spot.mode || 'other').replace(/[^a-z0-9-]/g, '');
+  const contCls = normText(spot.continent || 'unk').replace(/[^a-z0-9-]/g, '');
   const flagCc = resolveFlagCode(spot);
-  const flagHtml = flagCc
-    ? `<img class="act-flag" src="https://flagcdn.com/16x12/${flagCc}.png" alt="" loading="lazy" decoding="async" />`
+  const flagEmoji = countryFlagEmoji(flagCc);
+  const activatorText = sanitizeCallsignForText(spot.activator) || '—';
+  const activatorSlug = sanitizeCallsignForUrl(spot.activator);
+  const activatorPath = encodeURIComponent(activatorSlug).replaceAll('%2F', '/');
+  const activatorHref = activatorPath
+    ? (spot.source === 'POTA'
+      ? `https://pota.app/#/profile/${activatorPath}`
+      : `https://www.hamqth.com/${activatorPath}`)
     : '';
-  const potaUrl = spot.source === 'POTA'
-    ? `https://pota.app/#/profile/${spot.activator}`
-    : `https://www.hamqth.com/${spot.activator}`;
+  const referenceItems = (spot.references || [])
+    .map(sanitizeReferenceForUrl)
+    .filter(Boolean);
+  const refsTitle = referenceItems.join(', ') || '—';
 
-  tr.innerHTML = `
-    <td class="col-time">${formatTime(spot.spot_time)}</td>
-    <td class="col-source"><span class="badge badge-${src}">${spot.source}</span></td>
-    <td class="col-band">${spot.band || '—'}</td>
-    <td class="col-freq">${formatFreq(spot.frequency)}</td>
-    <td class="col-mode">${spot.mode || '—'}</td>
-    <td class="col-activator"><a class="act-link" href="${potaUrl}" target="_blank" rel="noopener">${flagHtml}${spot.activator || '—'}</a></td>
-    <td class="col-cont">${spot.continent || '—'}</td>
-    <td class="col-ref" title="${escapeHtml(refs)}">${refsHtml}</td>
-    <td class="col-name" title="${spot.name || ''}">${spot.name || '—'}</td>
-  `;
+  const tdTime = document.createElement('td');
+  tdTime.className = 'col-time';
+  tdTime.textContent = formatTime(spot.spot_time);
+  tr.appendChild(tdTime);
+
+  const tdSource = document.createElement('td');
+  tdSource.className = 'col-source';
+  const sourceBadge = document.createElement('span');
+  sourceBadge.className = `badge badge-${src}`;
+  sourceBadge.textContent = sourceText;
+  tdSource.appendChild(sourceBadge);
+  tr.appendChild(tdSource);
+
+  const tdBand = document.createElement('td');
+  tdBand.className = 'col-band';
+  tdBand.textContent = bandText;
+  tr.appendChild(tdBand);
+
+  const tdFreq = document.createElement('td');
+  tdFreq.className = 'col-freq';
+  tdFreq.textContent = formatFreq(spot.frequency);
+  tr.appendChild(tdFreq);
+
+  const tdMode = document.createElement('td');
+  tdMode.className = `col-mode mode-${modeCls}`;
+  tdMode.textContent = modeText;
+  tr.appendChild(tdMode);
+
+  const tdActivator = document.createElement('td');
+  tdActivator.className = 'col-activator';
+  const activatorLink = document.createElement('a');
+  activatorLink.className = 'act-link';
+  activatorLink.target = '_blank';
+  activatorLink.rel = 'noopener';
+  activatorLink.href = activatorHref || '#';
+  if (!activatorHref) activatorLink.addEventListener('click', (e) => e.preventDefault());
+  if (flagEmoji) {
+    const flagSpan = document.createElement('span');
+    flagSpan.className = 'act-flag';
+    flagSpan.textContent = flagEmoji;
+    activatorLink.appendChild(flagSpan);
+  }
+  activatorLink.appendChild(document.createTextNode(activatorText));
+  tdActivator.appendChild(activatorLink);
+  tr.appendChild(tdActivator);
+
+  const tdCont = document.createElement('td');
+  tdCont.className = `col-cont cont-${contCls}`;
+  tdCont.textContent = contText;
+  tr.appendChild(tdCont);
+
+  const tdRef = document.createElement('td');
+  tdRef.className = 'col-ref';
+  tdRef.title = refsTitle;
+  if (referenceItems.length === 0) {
+    tdRef.textContent = '—';
+  } else {
+    referenceItems.forEach((ref, idx) => {
+      if (idx > 0) tdRef.appendChild(document.createTextNode(', '));
+      const href = referenceUrl(spot.source, ref);
+      if (!href) {
+        tdRef.appendChild(document.createTextNode(ref));
+        return;
+      }
+      const link = document.createElement('a');
+      link.className = 'ref-link';
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.href = href;
+      link.textContent = ref;
+      tdRef.appendChild(link);
+    });
+  }
+  tr.appendChild(tdRef);
+
+  const tdName = document.createElement('td');
+  tdName.className = 'col-name';
+  tdName.title = nameText;
+  tdName.textContent = nameText;
+  tr.appendChild(tdName);
 
   return tr;
 }
@@ -512,6 +605,12 @@ function refilter() {
   saveUiState();
 }
 
+function resetSortToDefault() {
+  tableState.sortBy = 'time';
+  tableState.sortDir = 'desc';
+  updateSortHeaderUi();
+}
+
 function wireToggleGroup(containerId, filterSet) {
   const container = document.getElementById(containerId);
   container.addEventListener('click', (e) => {
@@ -520,6 +619,7 @@ function wireToggleGroup(containerId, filterSet) {
     const val = btn.dataset.value;
     if (filterSet.has(val)) { filterSet.delete(val); btn.classList.remove('active'); }
     else                    { filterSet.add(val);    btn.classList.add('active'); }
+    resetSortToDefault();
     refilter();
   });
 }
@@ -530,11 +630,13 @@ wireToggleGroup('filter-continent', filters.continents);
 
 document.getElementById('filter-band').addEventListener('change', (e) => {
   filters.band = e.target.value;
+  resetSortToDefault();
   refilter();
 });
 
 document.getElementById('filter-qrt').addEventListener('change', (e) => {
   filters.showQrt = e.target.checked;
+  resetSortToDefault();
   refilter();
 });
 
@@ -581,6 +683,7 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   document.getElementById('search-activator').value = '';
   document.getElementById('search-reference').value = '';
   document.getElementById('search-name').value = '';
+  resetSortToDefault();
   refilter();
 });
 

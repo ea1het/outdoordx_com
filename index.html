@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://bff.outdoordx.net http://localhost:9000; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" />
   <title>OutdoorDX — Real-time Field Activations</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -15,7 +14,7 @@
   <div class="hero">
     <nav>
       <div class="logo">Outdoor<span class="logo-dx">DX</span></div>
-      <div class="conn-status" id="conn-status">
+      <div class="conn-status">
         <span class="conn-dot" id="conn-dot"></span>
         <span id="conn-label">Connecting…</span>
       </div>
@@ -183,7 +182,7 @@
     </div>
 
     <div class="table-wrapper">
-      <table id="spots-table">
+      <table>
         <thead>
           <tr class="head-main">
             <th class="col-time sortable" data-sort="time">Time</th>
@@ -225,7 +224,7 @@
 
   <footer>
     <span class="footer-logo">Outdoor<span class="logo-dx">DX</span></span>
-    <span class="footer-copy">Data:
+    <span>Data:
       <a href="https://pota.app" target="_blank" rel="noopener">POTA</a> ·
       <a href="https://www.sota.org.uk" target="_blank" rel="noopener">SOTA</a> ·
       <a href="https://wwff.co" target="_blank" rel="noopener">WWFF</a> ·
