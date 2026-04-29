@@ -166,12 +166,16 @@ function normCountryName(v) {
     .trim();
 }
 
+// Retired ISO 3166-1 codes that cause collisions with current ones.
+const DEPRECATED_ISO_CODES = new Set(['AN', 'BU', 'CS', 'DD', 'FX', 'NT', 'SU', 'TP', 'YU', 'ZR']);
+
 function buildIsoNameIndex() {
   const out = {};
   const dn = new Intl.DisplayNames(['en'], { type: 'region' });
   for (let i = 65; i <= 90; i++) {
     for (let j = 65; j <= 90; j++) {
       const code = String.fromCharCode(i) + String.fromCharCode(j);
+      if (DEPRECATED_ISO_CODES.has(code)) continue;
       const name = dn.of(code);
       if (!name || name === code) continue;
       const key = normCountryName(name);
@@ -227,6 +231,7 @@ const callsignPrefixMap = [
   ['UA', 'ru'], ['R', 'ru'], ['RA', 'ru'], ['RK', 'ru'], ['RN', 'ru'], ['RU', 'ru'], ['RX', 'ru'], ['RW', 'ru'],
   ['ZS', 'za'], ['5R', 'mg'], ['5H', 'tz'], ['5N', 'ng'],
   ['VU', 'in'], ['HS', 'th'], ['9M', 'my'], ['YB', 'id'], ['DU', 'ph'], ['BY', 'cn'], ['BD', 'cn'], ['BH', 'cn'], ['BI', 'cn'], ['BG', 'cn'],
+  ['HL', 'kr'], ['DS', 'kr'], ['6K', 'kr'], ['6L', 'kr'], ['6M', 'kr'], ['6N', 'kr'],
 ];
 
 function flagCodeFromDxccName(dxccName) {
