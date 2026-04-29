@@ -515,7 +515,7 @@ function updateEmptyRow() {
 
 function updateStats() {
   const visible = [...spots.values()].filter(spotVisible);
-  const bySource = { POTA: 0, SOTA: 0, WWFF: 0, WWBOTA: 0 };
+  const bySource = { POTA: 0, SOTA: 0, WWBOTA: 0, WWFF: 0 };
   visible.forEach(s => { if (s.source in bySource) bySource[s.source]++; });
 
   statsBar.innerHTML = `
@@ -523,8 +523,8 @@ function updateStats() {
     <span class="stat-sep"></span>
     <span class="stat-source pota">POTA <b>${bySource.POTA}</b></span>
     <span class="stat-source sota">SOTA <b>${bySource.SOTA}</b></span>
-    <span class="stat-source wwff">WWFF <b>${bySource.WWFF}</b></span>
     <span class="stat-source wwbota">WWBOTA <b>${bySource.WWBOTA}</b></span>
+    <span class="stat-source wwff">WWFF <b>${bySource.WWFF}</b></span>
   `;
 }
 
