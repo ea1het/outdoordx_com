@@ -153,6 +153,8 @@ function applyUiState(state) {
   updateSortHeaderUi();
 }
 
+// For portable callsigns like YU/OK1WED/P the first segment is the DXCC prefix.
+// For home callsigns like F4JKY/P the first segment is the callsign itself.
 function callsignBase(cs) {
   return String(cs || '').toUpperCase().split('/')[0];
 }
@@ -186,6 +188,9 @@ function buildIsoNameIndex() {
 }
 
 const isoNameIndex = buildIsoNameIndex();
+
+// DXCC entities whose names differ from any ISO country name (sub-national
+// regions, historical territories, islands with their own DXCC entity, etc.).
 const dxccNameAliases = {
   'england': 'gb',
   'scotland': 'gb',
@@ -211,6 +216,8 @@ const dxccNameAliases = {
   'serbia and montenegro': 'rs',
 };
 
+// Longer prefixes must appear before any shorter prefix they start with
+// (e.g. 'KH6' before 'K'), otherwise the shorter one matches first.
 const callsignPrefixMap = [
   ['K', 'us'], ['N', 'us'], ['W', 'us'], ['AA', 'us'], ['AB', 'us'], ['AC', 'us'], ['AD', 'us'], ['AE', 'us'], ['AF', 'us'], ['AG', 'us'], ['AI', 'us'], ['AJ', 'us'], ['AK', 'us'], ['AL', 'us'], ['KM', 'us'], ['KH6', 'us'],
   ['VE', 'ca'], ['VA', 'ca'], ['VO', 'ca'], ['VY', 'ca'],
@@ -249,6 +256,8 @@ function flagCodeFromCallsign(cs) {
   return '';
 }
 
+// DXCC name takes priority: a foreign station operating portable in another
+// DXCC entity should show the entity's flag, not its home callsign prefix.
 function resolveFlagCode(spot) {
   const key = callsignBase(spot.activator);
   if (!key) return '';
@@ -523,6 +532,7 @@ function updateStats() {
 
 function addSpot(spot) {
   spots.set(spot.id, spot);
+  // Always reset to newest-first so the new spot appears at the top.
   tableState.sortBy = 'time';
   tableState.sortDir = 'desc';
   updateSortHeaderUi();
@@ -535,6 +545,7 @@ function addSpot(spot) {
 
 function updateSpot(spot) {
   spots.set(spot.id, spot);
+  // Same reset as addSpot: an updated spot is still a fresh event worth surfacing.
   tableState.sortBy = 'time';
   tableState.sortDir = 'desc';
   updateSortHeaderUi();
@@ -671,7 +682,6 @@ SEARCH_COLS.forEach(col => {
 });
 
 document.getElementById('btn-clear').addEventListener('click', () => {
-  // Re-activate all toggles
   ['filter-source', 'filter-mode', 'filter-continent'].forEach(id => {
     document.getElementById(id).querySelectorAll('.toggle').forEach(btn => {
       btn.classList.add('active');
