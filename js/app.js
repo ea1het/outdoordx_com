@@ -226,6 +226,8 @@ const dxccNameAliases = {
   'yugoslavia': 'rs',
   'serbia and montenegro': 'rs',
   'czech republic': 'cz',
+  'rodriguez i':    'mu',   // "Rodriguez I." → Rodrigues Island, part of Mauritius
+  'rodrigues island': 'mu',
 };
 
 // Longer prefixes must appear before any shorter prefix they start with
@@ -248,7 +250,7 @@ const callsignPrefixMap = [
   ['ON', 'be'], ['OE', 'at'], ['HB', 'ch'], ['SM', 'se'], ['LA', 'no'], ['OH', 'fi'], ['OZ', 'dk'],
   ['SP', 'pl'], ['OK', 'cz'], ['OL', 'cz'], ['OM', 'sk'], ['S5', 'si'], ['9A', 'hr'], ['YO', 'ro'], ['YU', 'rs'], ['YT', 'rs'], ['YZ', 'rs'], ['LZ', 'bg'], ['SV', 'gr'], ['TA', 'tr'],
   ['UA', 'ru'], ['R', 'ru'], ['RA', 'ru'], ['RK', 'ru'], ['RN', 'ru'], ['RU', 'ru'], ['RX', 'ru'], ['RW', 'ru'],
-  ['ZS', 'za'], ['5R', 'mg'], ['5H', 'tz'], ['5N', 'ng'],
+  ['ZS', 'za'], ['3B8', 'mu'], ['3B9', 'mu'], ['5R', 'mg'], ['5H', 'tz'], ['5N', 'ng'],
   ['VU', 'in'], ['HS', 'th'], ['9M', 'my'], ['YB', 'id'], ['DU', 'ph'], ['BY', 'cn'], ['BD', 'cn'], ['BH', 'cn'], ['BI', 'cn'], ['BG', 'cn'],
   ['HL', 'kr'], ['DS', 'kr'], ['6K', 'kr'], ['6L', 'kr'], ['6M', 'kr'], ['6N', 'kr'],
 ];
@@ -758,7 +760,115 @@ document.getElementById('btn-clear').addEventListener('click', () => {
   refilter();
 });
 
+// ── Changelog modal ───────────────────────────────────────────────────────────
+
+const CHANGELOG_SEEN_KEY = 'odx:changelog_seen_v1';
+
+// Extracts the date and bullet list from the topmost entry in the Markdown file.
+function parseChangelog(mdText) {
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  let date = null;
+  const bullets = [];
+  for (const raw of mdText.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    if (dateRe.test(line)) {
+      if (date) break;   // second date reached — done with the first entry
+      date = line;
+      continue;
+    }
+    if (date && line.startsWith('- ')) bullets.push(line.slice(2));
+  }
+  return { date, bullets };
+}
+
+function buildChangelogModal(date, bullets) {
+  const dismiss = () => {
+    try { localStorage.setItem(CHANGELOG_SEEN_KEY, date); } catch { /* quota/private */ }
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+
+  const onKey = (e) => { if (e.key === 'Escape') dismiss(); };
+  document.addEventListener('keydown', onKey);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'cl-overlay';
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) dismiss(); });
+
+  const card = document.createElement('div');
+  card.className = 'cl-card';
+
+  const header = document.createElement('div');
+  header.className = 'cl-header';
+  header.innerHTML =
+    `<h2 class="cl-title">What's new</h2>` +
+    `<span class="cl-date">${date}</span>`;
+
+  const sub = document.createElement('p');
+  sub.className = 'cl-sub';
+  sub.innerHTML = 'Full changelog available at <a href="https://github.com/ea1het/outdoordx_com/blob/gh-pages/Changelog.md" target="_blank" rel="noopener">GitHub repo</a>';
+
+  const list = document.createElement('ul');
+  list.className = 'cl-list';
+  bullets.forEach(b => {
+    const li = document.createElement('li');
+    li.textContent = b;
+    list.appendChild(li);
+  });
+
+  const footer = document.createElement('div');
+  footer.className = 'cl-footer';
+  const btn = document.createElement('button');
+  btn.className = 'cl-btn';
+  btn.textContent = 'Got it';
+  btn.addEventListener('click', dismiss);
+  footer.appendChild(btn);
+
+  card.append(header, sub, list, footer);
+  overlay.appendChild(card);
+  return overlay;
+}
+
+async function checkChangelog() {
+  try {
+    const res = await fetch('Changelog.md');
+    if (!res.ok) return;
+    const { date, bullets } = parseChangelog(await res.text());
+    if (!date || !bullets.length) return;
+    if (localStorage.getItem(CHANGELOG_SEEN_KEY) === date) return;
+    document.body.appendChild(buildChangelogModal(date, bullets));
+  } catch { /* network error or localStorage blocked — silently skip */ }
+}
+
+// ── Easter egg ────────────────────────────────────────────────────────────────
+// Five rapid clicks on the ♥ in the credit note clears all odx: localStorage
+// keys and reloads — handy for resetting cached flags / UI state during debugging.
+(function () {
+  const heart = document.querySelector('.credit-heart');
+  if (!heart) return;
+  let clicks = 0, timer = null;
+  heart.addEventListener('click', () => {
+    clicks++;
+    clearTimeout(timer);
+    if (clicks >= 5) {
+      clicks = 0;
+      heart.textContent = '✓';
+      heart.style.color = 'var(--pota)';
+      setTimeout(() => {
+        Object.keys(localStorage)
+          .filter(k => k.startsWith('odx:'))
+          .forEach(k => localStorage.removeItem(k));
+        location.reload();
+      }, 600);
+      return;
+    }
+    timer = setTimeout(() => { clicks = 0; }, 1500);
+  });
+})();
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 updateSortHeaderUi();
 applyUiState(loadUiState());
 connect();
+checkChangelog();
