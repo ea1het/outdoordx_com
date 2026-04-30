@@ -334,7 +334,7 @@ function referenceUrl(source, ref) {
     case 'SOTA':   return `https://www.sotadata.org.uk/en/summit/${safeRef.replaceAll('%2F', '/')}`;
     case 'WWFF':   return `https://spots.wwff.co/references/direct?wwff=${safeRef}`;
     case 'WWBOTA': return `https://wwbota.org/?s=${safeRef}`;
-    case 'IOTA':   return 'https://www.iota-world.org/islands-on-the-air/iota-groups-islands.html';
+    case 'IOTA':   return `https://www.iota-world.org/iotamaps/?uuid=777777&grpref=${safeRef}`;
     default:       return '';
   }
 }
