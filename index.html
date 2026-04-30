@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- CSP: locks down resource origins; connect-src allows the BFF SSE stream
+       (production URL + localhost for local dev). Tighten if new origins are added. -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://bff.outdoordx.net http://localhost:9000; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" />
   <title>OutdoorDX — Real-time Field Activations</title>
@@ -20,6 +22,8 @@
       </div>
     </nav>
 
+    <!-- Decorative SVG: layered mountain ridges + a ham radio antenna with
+         animated radio-wave circles. aria-hidden keeps it out of screen readers. -->
     <svg class="hero-scene-top"
          viewBox="0 0 1600 140"
          preserveAspectRatio="none"
@@ -119,6 +123,8 @@
       <div class="filter-group">
         <label class="filter-label filter-label-source">Source</label>
         <div class="toggle-group" id="filter-source">
+          <button class="toggle active dxped" data-value="DXPED">DXped</button>
+          <button class="toggle active iota" data-value="IOTA">IOTA</button>
           <button class="toggle active pota" data-value="POTA">POTA</button>
           <button class="toggle active sota" data-value="SOTA">SOTA</button>
           <button class="toggle active wwbota" data-value="WWBOTA">WWBOTA</button>
@@ -131,7 +137,6 @@
         <div class="toggle-group" id="filter-mode">
           <button class="toggle active" data-value="cw">CW</button>
           <button class="toggle active" data-value="ssb">SSB</button>
-          <button class="toggle active" data-value="fm">FM</button>
           <button class="toggle active" data-value="digi">Digi</button>
           <button class="toggle active" data-value="other">Other</button>
         </div>
@@ -172,9 +177,14 @@
       </div>
     </div>
 
+    <!-- Stats bar: the inner HTML is fully replaced by updateStats() in app.js
+         on every add/update/remove event. The placeholder dashes are only shown
+         during the brief window before the first SSE message arrives. -->
     <div class="stats-bar" id="stats-bar">
       <span class="stat-total">— spots</span>
       <span class="stat-sep"></span>
+      <span class="stat-source dxped">DXped <b>—</b></span>
+      <span class="stat-source iota">IOTA <b>—</b></span>
       <span class="stat-source pota">POTA <b>—</b></span>
       <span class="stat-source sota">SOTA <b>—</b></span>
       <span class="stat-source wwbota">WWBOTA <b>—</b></span>
@@ -183,6 +193,8 @@
 
     <div class="table-wrapper">
       <table>
+        <!-- Two-row header: .head-main has sortable column labels (sticky),
+             .head-search has the inline text search inputs below them. -->
         <thead>
           <tr class="head-main">
             <th class="col-time sortable" data-sort="time">Time</th>
@@ -208,6 +220,8 @@
           </tr>
         </thead>
         <tbody id="spots-body">
+          <!-- Shown when no spots exist or none match the current filters;
+               text is updated dynamically and visibility toggled via .hidden. -->
           <tr class="empty-row" id="empty-row">
             <td colspan="9">Waiting for spots…</td>
           </tr>
@@ -225,6 +239,7 @@
   <footer>
     <span class="footer-logo">Outdoor<span class="logo-dx">DX</span></span>
     <span>Credits to / Raw data by:
+      <a href="https://hamalert.org/stats" target="_blank" rel="noopener">HamAlert</a> ·
       <a href="https://pota.app" target="_blank" rel="noopener">POTA</a> ·
       <a href="https://www.sota.org.uk" target="_blank" rel="noopener">SOTA</a> ·
       <a href="https://wwbota.org" target="_blank" rel="noopener">WWBOTA</a> ·

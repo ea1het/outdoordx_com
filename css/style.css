@@ -24,6 +24,10 @@
   --wwff-dim:    rgba(96,165,250,.12);
   --wwbota:      #c084fc;
   --wwbota-dim:  rgba(192,132,252,.12);
+  --iota:        #f472b6;
+  --iota-dim:    rgba(244,114,182,.12);
+  --dxped:       #fb923c;
+  --dxped-dim:   rgba(251,146,60,.12);
 
   /* pastel accents for mode / continent filters */
   --pastel-cyan:   #7dd3fc;
@@ -146,7 +150,6 @@ nav {
 
 .conn-dot.ok    { background: var(--conn-ok); box-shadow: 0 0 8px var(--conn-ok); }
 .conn-dot.error { background: var(--conn-err); }
-.conn-dot.wait  { background: var(--conn-wait); }
 
 
 /* ── Dashboard section ────────────────────────────────────────────────────── */
@@ -203,6 +206,8 @@ nav {
   gap: 6px;
 }
 
+/* Each filter label gets a small CSS-drawn icon (10×10 px) indicating
+   the filter type: circle for source/continent, striped for mode/band. */
 .filter-label::before {
   content: "";
   display: inline-block;
@@ -301,6 +306,18 @@ nav {
   border-color: rgba(192,132,252,.4);
   box-shadow: 0 0 10px rgba(192,132,252,.2), inset 0 1px 0 rgba(255,255,255,.08);
 }
+.toggle.active.iota {
+  background: var(--iota-dim);
+  color: var(--iota);
+  border-color: rgba(244,114,182,.4);
+  box-shadow: 0 0 10px rgba(244,114,182,.2), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.toggle.active.dxped {
+  background: var(--dxped-dim);
+  color: var(--dxped);
+  border-color: rgba(251,146,60,.4);
+  box-shadow: 0 0 10px rgba(251,146,60,.2), inset 0 1px 0 rgba(255,255,255,.08);
+}
 
 /* mode-specific pastel active colors */
 #filter-mode .toggle.active[data-value="cw"] {
@@ -314,12 +331,6 @@ nav {
   color: var(--pastel-rose);
   border-color: rgba(249,168,212,.45);
   box-shadow: 0 0 10px rgba(249,168,212,.2), inset 0 1px 0 rgba(255,255,255,.08);
-}
-#filter-mode .toggle.active[data-value="fm"] {
-  background: var(--pastel-mint-d);
-  color: var(--pastel-mint);
-  border-color: rgba(153,246,228,.45);
-  box-shadow: 0 0 10px rgba(153,246,228,.2), inset 0 1px 0 rgba(255,255,255,.08);
 }
 #filter-mode .toggle.active[data-value="digi"] {
   background: var(--pastel-lilac-d);
@@ -369,7 +380,6 @@ nav {
   background: rgba(110,231,183,.2);
   color: #6ee7b7;
   border-color: rgba(110,231,183,.5);
-  box-shadow: 0 0 10px rgba(110,231,183,.2), inset 0 1px 0 rgba(255,255,255,.08);
 }
 #filter-continent .toggle.active[data-value="UNK"] {
   background: var(--pastel-amber-d);
@@ -495,6 +505,8 @@ select:focus { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(245,166,35
 .stat-source.sota b  { color: var(--sota); }
 .stat-source.wwff b  { color: var(--wwff); }
 .stat-source.wwbota b{ color: var(--wwbota); }
+.stat-source.iota b  { color: var(--iota); }
+.stat-source.dxped b { color: var(--dxped); }
 
 /* ── Table ────────────────────────────────────────────────────────────────── */
 .table-wrapper {
@@ -508,6 +520,8 @@ select:focus { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(245,166,35
 
 tbody { background: var(--table-bg); }
 
+/* table-layout: fixed lets the explicit .col-* width rules actually take effect;
+   without it the browser ignores them and sizes columns by content. */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -653,6 +667,8 @@ td.col-ref {
   letter-spacing: .01em;
   padding-left: 8px;
   padding-right: 9px;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .ref-link {
@@ -691,8 +707,12 @@ td.col-ref {
 .badge-sota   { color: #a07c00; }
 .badge-wwff   { color: #2563c0; }
 .badge-wwbota { color: #8b3fcf; }
+.badge-iota   { color: #be185d; }
+.badge-dxped  { color: #c2410c; }
 
-/* table text-only palette mapping for mode / continent */
+/* Mode cell colour: class is set from the raw mode string (e.g. "mode-ft8", "mode-cw")
+   by buildRow() in app.js. The broad buckets (mode-digi, mode-other) act as fallbacks
+   for any mode not listed individually. Continent classes follow the same pattern. */
 td.col-mode.mode-cw    { color: var(--pastel-cyan-t); }
 td.col-mode.mode-ssb   { color: var(--pastel-rose-t); }
 td.col-mode.mode-fm    { color: var(--pastel-mint-t); }

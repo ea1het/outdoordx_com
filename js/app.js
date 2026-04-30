@@ -16,8 +16,8 @@ const BFF_URL = (function () {
 const spots = new Map();   // id → spot
 
 const filters = {
-  sources:    new Set(['POTA', 'SOTA', 'WWFF', 'WWBOTA']),
-  modes:      new Set(['cw', 'ssb', 'fm', 'digi', 'other']),
+  sources:    new Set(['DXPED', 'IOTA', 'POTA', 'SOTA', 'WWFF', 'WWBOTA']),
+  modes:      new Set(['cw', 'ssb', 'digi', 'other']),
   continents: new Set(['AF', 'AN', 'AS', 'EU', 'NA', 'OC', 'SA', 'UNK']),
   band:       '',
   showQrt:    false,
@@ -33,8 +33,13 @@ const tableState = {
   },
 };
 
+// localStorage keys — bump the suffix (v1 → v2) to force a clean slate on all clients
+// when the stored shape changes and the old data would be misread.
 const FLAG_CACHE_KEY = 'odx:flag_cc_v1';
 const UI_STATE_KEY   = 'odx:ui_state_v1';
+
+// Callsign → ISO-2 country code, persisted so the flag lookup survives page reloads
+// without re-resolving every activator on the next `init` event.
 const flagCache = (function loadFlagCache() {
   try { return JSON.parse(localStorage.getItem(FLAG_CACHE_KEY) || '{}') || {}; }
   catch { return {}; }
@@ -107,6 +112,8 @@ function loadUiState() {
   }
 }
 
+// Restores filter/sort/search values into both the in-memory state objects
+// AND the corresponding DOM controls so they stay in sync after a page reload.
 function applyUiState(state) {
   if (!state || typeof state !== 'object') return;
 
@@ -133,7 +140,7 @@ function applyUiState(state) {
 
   SEARCH_COLS.forEach(col => {
     const v = t.search && typeof t.search[col] === 'string' ? t.search[col] : '';
-    tableState.search[col] = normText(v);
+    tableState.search[col] = normText(v.trim());
   });
 
   ['filter-source', 'filter-mode', 'filter-continent'].forEach(id => {
@@ -171,6 +178,10 @@ function normCountryName(v) {
 // Retired ISO 3166-1 codes that cause collisions with current ones.
 const DEPRECATED_ISO_CODES = new Set(['AN', 'BU', 'CS', 'DD', 'FX', 'NT', 'SU', 'TP', 'YU', 'ZR']);
 
+// Builds a name → ISO-2 index by brute-forcing all AA–ZZ combinations through
+// Intl.DisplayNames. Intl returns the code itself (e.g. "ZZ") for unassigned
+// codes, so those are filtered out. First match wins to avoid overwriting a
+// valid code with a later collision.
 function buildIsoNameIndex() {
   const out = {};
   const dn = new Intl.DisplayNames(['en'], { type: 'region' });
@@ -214,6 +225,7 @@ const dxccNameAliases = {
   'greenland': 'gl',
   'yugoslavia': 'rs',
   'serbia and montenegro': 'rs',
+  'czech republic': 'cz',
 };
 
 // Longer prefixes must appear before any shorter prefix they start with
@@ -234,7 +246,7 @@ const callsignPrefixMap = [
   ['LU', 'ar'], ['LW', 'ar'], ['CX', 'uy'], ['CE', 'cl'],
   ['PA', 'nl'], ['PB', 'nl'], ['PC', 'nl'], ['PD', 'nl'], ['PE', 'nl'], ['PG', 'nl'], ['PH', 'nl'], ['PI', 'nl'],
   ['ON', 'be'], ['OE', 'at'], ['HB', 'ch'], ['SM', 'se'], ['LA', 'no'], ['OH', 'fi'], ['OZ', 'dk'],
-  ['SP', 'pl'], ['OK', 'cz'], ['OM', 'sk'], ['S5', 'si'], ['9A', 'hr'], ['YO', 'ro'], ['YU', 'rs'], ['YT', 'rs'], ['YZ', 'rs'], ['LZ', 'bg'], ['SV', 'gr'], ['TA', 'tr'],
+  ['SP', 'pl'], ['OK', 'cz'], ['OL', 'cz'], ['OM', 'sk'], ['S5', 'si'], ['9A', 'hr'], ['YO', 'ro'], ['YU', 'rs'], ['YT', 'rs'], ['YZ', 'rs'], ['LZ', 'bg'], ['SV', 'gr'], ['TA', 'tr'],
   ['UA', 'ru'], ['R', 'ru'], ['RA', 'ru'], ['RK', 'ru'], ['RN', 'ru'], ['RU', 'ru'], ['RX', 'ru'], ['RW', 'ru'],
   ['ZS', 'za'], ['5R', 'mg'], ['5H', 'tz'], ['5N', 'ng'],
   ['VU', 'in'], ['HS', 'th'], ['9M', 'my'], ['YB', 'id'], ['DU', 'ph'], ['BY', 'cn'], ['BD', 'cn'], ['BH', 'cn'], ['BI', 'cn'], ['BG', 'cn'],
@@ -300,6 +312,9 @@ function safeText(v) {
   return t || '—';
 }
 
+// Unicode regional indicator letters: adding 127397 to 'A'(65)…'Z'(90) maps
+// them to the Regional Indicator Symbols (U+1F1E6–U+1F1FF). Browsers that
+// support the emoji zwj sequences render the pair as a flag.
 function countryFlagEmoji(cc) {
   const code = String(cc || '').toUpperCase();
   if (!/^[A-Z]{2}$/.test(code)) return '';
@@ -317,12 +332,38 @@ function referenceUrl(source, ref) {
     case 'SOTA':   return `https://www.sotadata.org.uk/en/summit/${safeRef.replaceAll('%2F', '/')}`;
     case 'WWFF':   return `https://spots.wwff.co/references/direct?wwff=${safeRef}`;
     case 'WWBOTA': return `https://wwbota.org/?s=${safeRef}`;
+    case 'IOTA':   return 'https://www.iota-world.org/islands-on-the-air/iota-groups-islands.html';
     default:       return '';
   }
 }
 
 function normText(v) {
   return String(v || '').toLowerCase();
+}
+
+const MODE_FILTER = {
+  // cw
+  CW:           'cw',
+  // ssb / voice
+  SSB: 'ssb', DSB: 'ssb', LSB: 'ssb', USB: 'ssb', VOICE: 'ssb',
+  // other (analog non-ssb)
+  FM: 'other', AM: 'other',
+  // digi — full ADIF 3.1.7 mode enumeration minus the entries above
+  ARDOP: 'digi', ATV: 'digi', CHIP: 'digi', CLO: 'digi', CONTESTI: 'digi',
+  DIGITALVOICE: 'digi', DOMINO: 'digi', DYNAMIC: 'digi', FAX: 'digi',
+  FSK: 'digi', FSK441: 'digi', FT8: 'digi', HELL: 'digi', ISCAT: 'digi',
+  JT4: 'digi', JT6M: 'digi', JT9: 'digi', JT44: 'digi', JT65: 'digi',
+  MFSK: 'digi', MSK144: 'digi', MT63: 'digi', MTONE: 'digi', OFDM: 'digi',
+  OLIVIA: 'digi', OPERA: 'digi', PAC: 'digi', PAX: 'digi', PKT: 'digi',
+  PSK: 'digi', PSK2K: 'digi', Q15: 'digi', QRA64: 'digi', ROS: 'digi',
+  RTTY: 'digi', RTTYM: 'digi', SSTV: 'digi', T10: 'digi', THOR: 'digi',
+  THRB: 'digi', TOR: 'digi', V4: 'digi', VOI: 'digi', WINMOR: 'digi',
+  WSPR: 'digi',
+};
+
+function resolveFilterMode(spot) {
+  const m = String(spot.mode || '').toUpperCase();
+  return MODE_FILTER[m] ?? 'other';
 }
 
 function sortValue(spot, col) {
@@ -357,7 +398,7 @@ function sortedSpots() {
 
 function spotVisible(spot) {
   if (!filters.sources.has(spot.source))            return false;
-  if (!filters.modes.has(spot.mode_class))          return false;
+  if (!filters.modes.has(resolveFilterMode(spot)))  return false;
   if (!filters.continents.has(spot.continent || 'UNK')) return false;
   if (filters.band && spot.band !== filters.band)   return false;
   if (!filters.showQrt && spot.status === 'qrt')    return false;
@@ -380,6 +421,9 @@ function buildRow(spot) {
   const modeText = safeText(spot.mode);
   const contText = safeText(spot.continent);
   const nameText = safeText(spot.name);
+  // modeCls drives CSS colour only; it intentionally uses the raw mode_class/mode
+  // string (e.g. "ft8", "ssb") rather than the normalised filter bucket so the
+  // colour rules can be as specific or broad as the stylesheet chooses.
   const modeCls = normText(spot.mode_class || spot.mode || 'other').replace(/[^a-z0-9-]/g, '');
   const contCls = normText(spot.continent || 'unk').replace(/[^a-z0-9-]/g, '');
   const flagCc = resolveFlagCode(spot);
@@ -481,9 +525,12 @@ function buildRow(spot) {
   return tr;
 }
 
+// Removes the class first, forces a reflow by reading offsetWidth (which flushes
+// pending style changes), then re-adds it — this resets the CSS animation so it
+// plays again even if the row was already flashing.
 function flash(tr, cls) {
   tr.classList.remove('flash-new', 'flash-upd');
-  void tr.offsetWidth;   // force reflow to restart animation
+  void tr.offsetWidth;
   tr.classList.add(cls);
   tr.addEventListener('animationend', () => tr.classList.remove(cls), { once: true });
 }
@@ -515,12 +562,14 @@ function updateEmptyRow() {
 
 function updateStats() {
   const visible = [...spots.values()].filter(spotVisible);
-  const bySource = { POTA: 0, SOTA: 0, WWBOTA: 0, WWFF: 0 };
+  const bySource = { DXPED: 0, IOTA: 0, POTA: 0, SOTA: 0, WWBOTA: 0, WWFF: 0 };
   visible.forEach(s => { if (s.source in bySource) bySource[s.source]++; });
 
   statsBar.innerHTML = `
     <span class="stat-total">${visible.length} spot${visible.length !== 1 ? 's' : ''}</span>
     <span class="stat-sep"></span>
+    <span class="stat-source dxped">DXped <b>${bySource.DXPED}</b></span>
+    <span class="stat-source iota">IOTA <b>${bySource.IOTA}</b></span>
     <span class="stat-source pota">POTA <b>${bySource.POTA}</b></span>
     <span class="stat-source sota">SOTA <b>${bySource.SOTA}</b></span>
     <span class="stat-source wwbota">WWBOTA <b>${bySource.WWBOTA}</b></span>
@@ -563,6 +612,8 @@ function removeSpot(id) {
   updateStats();
 }
 
+// Full replacement: the BFF sends the current live snapshot on (re)connect,
+// so we discard any previously cached spots before loading the new list.
 function loadInit(spotList) {
   spots.clear();
   spotList.forEach(s => spots.set(s.id, s));
@@ -607,12 +658,12 @@ function connect() {
     try { const { id } = JSON.parse(e.data); removeSpot(id); } catch (err) { console.error('remove parse error', err); }
   });
 
+  // EventSource handles reconnection automatically with exponential back-off;
+  // we only update the UI label here — no manual retry logic needed.
   es.onerror = () => {
     setConnState('error');
-    // EventSource auto-reconnects; we just show the status.
   };
 
-  es.onopen = () => setConnState('ok');
 }
 
 // ── Filter wiring ─────────────────────────────────────────────────────────────
@@ -630,6 +681,8 @@ function resetSortToDefault() {
   updateSortHeaderUi();
 }
 
+// Single delegated listener on the group container — handles all toggle buttons
+// inside without attaching one listener per button.
 function wireToggleGroup(containerId, filterSet) {
   const container = document.getElementById(containerId);
   container.addEventListener('click', (e) => {
