@@ -9,6 +9,7 @@
 - Removed FM from the mode filter buttons. FM and AM are now classified as Other. The CSS toggle rule for FM was also removed.
 - Added HamAlert to the footer credits (linked to hamalert.org/stats). DXped and IOTA are HamAlert-aggregated sources, not independent programmes.
 - Fixed Czech Republic flag not resolving for OL-prefix callsigns (e.g. OL1TWR). Added `OL` to `callsignPrefixMap` and `'czech republic'` to `dxccNameAliases` to cover both the callsign path and the DXCC name path (Intl.DisplayNames returns "Czechia" for CZ, not "Czech Republic").
+- Fixed Rodrigues Island flag not resolving for 3B9-prefix callsigns (e.g. 3B9G). Added `3B9` (Rodrigues Island) and `3B8` (Mauritius proper) to `callsignPrefixMap` mapped to `mu`, and added `'rodriguez i'` and `'rodrigues island'` to `dxccNameAliases` to handle the BFF DXCC name "Rodriguez I." through both resolution paths.
 - Fixed `applyUiState` not trimming whitespace from restored search strings, which could cause silent mismatches against live spot data.
 - Reference cell (`col-ref`) now wraps text instead of truncating, so all references are visible when a spot carries multiple (e.g. multi-bunker WWBOTA activations). The tooltip is kept as a bonus.
 - Removed redundant `.conn-dot.wait` CSS rule (the base `.conn-dot` already sets the waiting colour).
