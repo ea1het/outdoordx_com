@@ -285,6 +285,7 @@ function resolveFlagCode(spot) {
 }
 
 function refsText(spot) {
+  if (spot.source === 'DXPED') return spot.meta?.hamalert?.fullCallsign || '';
   return (spot.references || []).join(', ');
 }
 
@@ -441,7 +442,8 @@ function buildRow(spot) {
   const referenceItems = (spot.references || [])
     .map(sanitizeReferenceForUrl)
     .filter(Boolean);
-  const refsTitle = referenceItems.join(', ') || '—';
+  const dxpedFullCs = spot.source === 'DXPED' ? sanitizeCallsignForText(spot.meta?.hamalert?.fullCallsign) : '';
+  const refsTitle = referenceItems.join(', ') || dxpedFullCs || '—';
 
   const tdTime = document.createElement('td');
   tdTime.className = 'col-time';
@@ -498,7 +500,7 @@ function buildRow(spot) {
   tdRef.className = 'col-ref';
   tdRef.title = refsTitle;
   if (referenceItems.length === 0) {
-    tdRef.textContent = '—';
+    tdRef.textContent = dxpedFullCs || '—';
   } else {
     referenceItems.forEach((ref, idx) => {
       if (idx > 0) tdRef.appendChild(document.createTextNode(', '));
