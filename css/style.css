@@ -1042,6 +1042,7 @@ footer {
 
   .filter-group label { display: inline-flex; }
   .filter-group + .filter-group { padding-left: 12px; border-left: 1px solid rgba(137,186,226,.16); }
+  .filter-group.filter-group--inline { border: none; padding: 4px 0 0; }
 
   .filter-group--inline {
     gap: 8px;
@@ -1063,10 +1064,12 @@ footer {
   .col-name, .col-mode { display: none; }
 
   /* Mobile-only: tighten key columns to free space for reference search */
-  .col-freq      { width: 82px; }
+  .col-time      { width: 62px; }
+  .col-freq      { width: 100px; }
   .col-activator { width: 136px; }
   .col-ref       { width: 128px; }
 
+  th.col-time, td.col-time,
   th.col-freq, td.col-freq,
   th.col-activator, td.col-activator,
   th.col-ref, td.col-ref {
