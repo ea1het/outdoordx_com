@@ -228,6 +228,7 @@ const dxccNameAliases = {
   'czech republic': 'cz',
   'rodriguez i':    'mu',   // "Rodriguez I." → Rodrigues Island, part of Mauritius
   'rodrigues island': 'mu',
+  'bonaire': 'bq',
 };
 
 // Longer prefixes must appear before any shorter prefix they start with
@@ -246,6 +247,7 @@ const callsignPrefixMap = [
   ['ZL', 'nz'],
   ['PY', 'br'], ['PP', 'br'], ['PQ', 'br'], ['PR', 'br'], ['PS', 'br'], ['PT', 'br'], ['PU', 'br'],
   ['LU', 'ar'], ['LW', 'ar'], ['CX', 'uy'], ['CE', 'cl'],
+  ['PJ4', 'bq'],
   ['PA', 'nl'], ['PB', 'nl'], ['PC', 'nl'], ['PD', 'nl'], ['PE', 'nl'], ['PG', 'nl'], ['PH', 'nl'], ['PI', 'nl'],
   ['ON', 'be'], ['OE', 'at'], ['HB', 'ch'], ['SM', 'se'], ['LA', 'no'], ['OH', 'fi'], ['OZ', 'dk'],
   ['SP', 'pl'], ['OK', 'cz'], ['OL', 'cz'], ['OM', 'sk'], ['S5', 'si'], ['9A', 'hr'], ['YO', 'ro'], ['YU', 'rs'], ['YT', 'rs'], ['YZ', 'rs'], ['LZ', 'bg'], ['SV', 'gr'], ['TA', 'tr'],

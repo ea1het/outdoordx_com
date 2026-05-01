@@ -1,5 +1,9 @@
 # Changelog
 
+2026-05-01
+
+- Fixed Bonaire flag not resolving for PJ4-prefix callsigns (e.g. PJ4TB). Added `PJ4` to `callsignPrefixMap` and `'bonaire'` to `dxccNameAliases`, both mapped to `bq`, covering both the callsign and DXCC name resolution paths.
+
 2026-04-30
 
 - Added "What's New" changelog modal: shown automatically when the top entry date in Changelog.md is newer than the last-seen date stored in localStorage (`odx:changelog_seen_v1`). Fetches and parses the Markdown file at runtime — no constant to maintain in code. Dismisses via "Got it" button, clicking the backdrop, or Escape key; all paths save the date to localStorage so the modal does not reappear until a new entry is added.
