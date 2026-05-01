@@ -1,5 +1,10 @@
 # Changelog
 
+2026-05-02
+
+- Updated stats bar wording on desktop from "`N spots`" to `Total activations: N - Users/Sessions active: X/Y`.
+- Mobile stats-bar behavior adjusted so only source counters are shown (DXped/IOTA/POTA/SOTA/WWBOTA/WWFF), with desktop activation/session text hidden and the counters centered.
+
 2026-05-01
 
 - Fixed Bonaire flag not resolving for PJ4-prefix callsigns (e.g. PJ4TB). Added `PJ4` to `callsignPrefixMap` and `'bonaire'` to `dxccNameAliases`, both mapped to `bq`, covering both the callsign and DXCC name resolution paths.
