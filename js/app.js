@@ -12,6 +12,14 @@ const BFF_URL = (function () {
   return 'https://bff.outdoordx.net/stream';
 })();
 
+const READY_URL = (function () {
+  const h = window.location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1') {
+    return 'http://localhost:9000/ready';
+  }
+  return 'https://bff.outdoordx.net/ready';
+})();
+
 // ── State ───────────────────────────────────────────────────────────────────
 const spots = new Map();   // id → spot
 
@@ -32,6 +40,8 @@ const tableState = {
     name:      '',
   },
 };
+
+let usersSessionsOnline = '0/0';
 
 // localStorage keys — bump the suffix (v1 → v2) to force a clean slate on all clients
 // when the stored shape changes and the old data would be misread.
@@ -572,7 +582,7 @@ function updateStats() {
   visible.forEach(s => { if (s.source in bySource) bySource[s.source]++; });
 
   statsBar.innerHTML = `
-    <span class="stat-total">${visible.length} spot${visible.length !== 1 ? 's' : ''}</span>
+    <span class="stat-total">Total activations: ${visible.length} - Users/Sessions active: ${usersSessionsOnline}</span>
     <span class="stat-sep"></span>
     <span class="stat-source dxped">DXped <b>${bySource.DXPED}</b></span>
     <span class="stat-source iota">IOTA <b>${bySource.IOTA}</b></span>
@@ -581,6 +591,25 @@ function updateStats() {
     <span class="stat-source wwbota">WWBOTA <b>${bySource.WWBOTA}</b></span>
     <span class="stat-source wwff">WWFF <b>${bySource.WWFF}</b></span>
   `;
+}
+
+async function refreshReadyStatus() {
+  try {
+    const res = await fetch(READY_URL, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && typeof data.online === 'string' && data.online.trim()) {
+      usersSessionsOnline = data.online.trim();
+      updateStats();
+    }
+  } catch {
+    // Keep previous value on failures; this must never interrupt SSE rendering.
+  }
+}
+
+function startReadyStatusPolling() {
+  refreshReadyStatus();
+  setInterval(refreshReadyStatus, 120000);
 }
 
 // ── Spot management ───────────────────────────────────────────────────────────
@@ -875,4 +904,5 @@ async function checkChangelog() {
 updateSortHeaderUi();
 applyUiState(loadUiState());
 connect();
+startReadyStatusPolling();
 checkChangelog();

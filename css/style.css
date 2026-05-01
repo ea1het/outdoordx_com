@@ -1054,11 +1054,12 @@ footer {
 
   /* Stats: wrap into two lines */
   .stats-bar {
-    flex-wrap: wrap;
-    row-gap: 2px;
+    justify-content: center;
     padding: 5px 12px;
     font-size: 11px;
   }
+  .stat-total,
+  .stat-sep { display: none; }
 
   /* Table: show only the essentials */
   .col-name, .col-mode { display: none; }
