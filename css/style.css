@@ -989,8 +989,8 @@ footer {
   }
 
   .filter-group + .filter-group {
-    padding-left: 8px;
-    border-left: none;
+    padding-left: 12px;
+    border-left: 1px solid rgba(137,186,226,.16);
   }
 
   .toggle { padding: 3px 9px; font-size: 10.5px; }
@@ -1041,15 +1041,8 @@ footer {
   }
 
   .filter-group label { display: inline-flex; }
-  .filter-group + .filter-group { padding-left: 12px; }
+  .filter-group + .filter-group { padding-left: 12px; border-left: 1px solid rgba(137,186,226,.16); }
 
-  .toggle-group {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .toggle-group::-webkit-scrollbar { display: none; }
   .filter-group--inline {
     gap: 8px;
     justify-content: space-between;
