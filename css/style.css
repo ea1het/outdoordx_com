@@ -1036,12 +1036,20 @@ footer {
 
   .filter-group {
     width: 100%;
-    padding: 7px 8px;
+    padding: 7px 12px;
     border-radius: 9px;
   }
 
   .filter-group label { display: inline-flex; }
-  .filter-group + .filter-group { padding-left: 8px; }
+  .filter-group + .filter-group { padding-left: 12px; }
+
+  .toggle-group {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .toggle-group::-webkit-scrollbar { display: none; }
   .filter-group--inline {
     gap: 8px;
     justify-content: space-between;
