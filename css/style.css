@@ -589,7 +589,7 @@ table {
 .col-time     { width: 72px; }
 .col-source   { width: 72px; }
 .col-activator{ width: 154px; }
-.col-freq     { width: 92px; }
+.col-freq     { width: 120px; }
 .col-band     { width: 58px; }
 .col-mode     { width: 62px; }
 .col-ref      { width: 142px; }
@@ -1066,7 +1066,7 @@ footer {
 
   /* Mobile-only: tighten key columns to free space for reference search */
   .col-time      { width: 62px; }
-  .col-freq      { width: 100px; }
+  .col-freq      { width: 115px; }
   .col-activator { width: 136px; }
   .col-ref       { width: 128px; }
 
