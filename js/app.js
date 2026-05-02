@@ -851,7 +851,6 @@ function upsertOperationSpot(incoming, flashClass = null) {
   const matchingKeys = findOperationKeysByDisplayIdentity(incoming);
   const key = matchingKeys[0] || keyed;
   const next = { ...incoming, id: key };
-  const prev = spots.get(key) || null;
 
   // Collapse stale duplicate keys with same identity down to one canonical key.
   matchingKeys.slice(1).forEach(dupKey => {
@@ -870,45 +869,13 @@ function upsertOperationSpot(incoming, flashClass = null) {
   operationByRawId.set(incoming.id, key);
   currentRawByOperation.set(key, incoming.id);
   spots.set(key, next);
-
-  const wasVisible = !!prev && spotVisible(prev);
-  const isVisible = spotVisible(next);
-  if (!wasVisible && isVisible) {
-    addSpot(next);
-    return;
-  }
-  if (wasVisible && !isVisible) {
-    removeSpot(key);
-    enforceSortedDomOrder();
-    return;
-  }
-  if (!isVisible) return;
-
-  if (!prev) {
-    addSpot(next);
-    enforceSortedDomOrder();
-    return;
-  }
-
-  const sortCol = tableState.sortBy;
-  const sortChanged = sortValue(prev, sortCol) !== sortValue(next, sortCol);
-  if (sortChanged) {
-    updateSpot(next);
-    enforceSortedDomOrder();
-    return;
-  }
-
-  const existing = tbody.querySelector(`#row-${CSS.escape(key)}`);
-  if (!existing) {
-    addSpot(next);
-    return;
-  }
-  const replacement = buildRow(next);
-  existing.replaceWith(replacement);
-  if (flashClass) flash(replacement, flashClass);
-  enforceSortedDomOrder();
+  renderTable();
   updateEmptyRow();
   updateStats();
+  if (flashClass) {
+    const row = tbody.querySelector(`#row-${CSS.escape(key)}`);
+    if (row) flash(row, flashClass);
+  }
 }
 
 /** Removes operation row only when remove event targets current latest raw id. */
@@ -919,8 +886,9 @@ function removeRawSpot(id) {
   if (currentRawByOperation.get(key) !== id) return; // stale remove for older raw event
   currentRawByOperation.delete(key);
   spots.delete(key);
-  removeSpot(key);
-  enforceSortedDomOrder();
+  renderTable();
+  updateEmptyRow();
+  updateStats();
 }
 
 // Full replacement: the BFF sends the current live snapshot on (re)connect,
