@@ -749,7 +749,6 @@ function wireToggleGroup(containerId, filterSet) {
     const val = btn.dataset.value;
     if (filterSet.has(val)) { filterSet.delete(val); btn.classList.remove('active'); }
     else                    { filterSet.add(val);    btn.classList.add('active'); }
-    resetSortToDefault();
     refilter();
   });
 }
@@ -760,13 +759,11 @@ wireToggleGroup('filter-continent', filters.continents);
 
 document.getElementById('filter-band').addEventListener('change', (e) => {
   filters.band = e.target.value;
-  resetSortToDefault();
   refilter();
 });
 
 document.getElementById('filter-qrt').addEventListener('change', (e) => {
   filters.showQrt = e.target.checked;
-  resetSortToDefault();
   refilter();
 });
 
