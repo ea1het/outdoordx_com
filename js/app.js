@@ -367,6 +367,13 @@ function normText(v) {
   return String(v || '').toLowerCase();
 }
 
+function normToken(v) {
+  return String(v || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toUpperCase();
+}
+
 const MODE_FILTER = {
   // cw
   CW:           'cw',
@@ -411,18 +418,19 @@ function normalizedRefs(spot) {
   return (spot.references || [])
     .map(sanitizeReferenceForUrl)
     .filter(Boolean)
+    .map(normToken)
     .sort()
     .join(',');
 }
 
 function dedupeKey(spot) {
-  const source = String(spot.source || '').toUpperCase();
+  const source = normToken(spot.source);
   if (!source) return `UNK|${spot.id}`;
   if (source === 'DXPED') return `DXPED|${spot.id}`;
-  const activator = sanitizeCallsignForUrl(spot.activator) || '-';
+  const activator = normToken(sanitizeCallsignForUrl(spot.activator)) || '-';
   const refs = normalizedRefs(spot) || '-';
-  const band = String(spot.band || '').toUpperCase() || '-';
-  const mode = String(spot.mode || '').toUpperCase() || '-';
+  const band = normToken(spot.band) || '-';
+  const mode = normToken(spot.mode) || '-';
   return `${source}|${activator}|${refs}|${band}|${mode}`;
 }
 
