@@ -21,10 +21,9 @@ const READY_URL = (function () {
 })();
 
 // ── State ───────────────────────────────────────────────────────────────────
-const spots = new Map();   // winnerId → winner spot (rendered rows)
-const spotBuckets = new Map(); // dedupeKey → Map(rawSpotId → raw spot)
-const spotKeyById = new Map(); // rawSpotId → dedupeKey
-const spotWinnerByKey = new Map(); // dedupeKey → winnerId
+const spots = new Map();   // operationKey → rendered spot (stable row id)
+const operationByRawId = new Map(); // raw SSE id → operationKey
+const currentRawByOperation = new Map(); // operationKey → latest raw SSE id
 
 const filters = {
   sources:    new Set(['DXPED', 'IOTA', 'POTA', 'SOTA', 'WWFF', 'WWBOTA']),
@@ -70,14 +69,17 @@ const SORT_COLS = new Set(['time', 'source', 'band', 'frequency', 'mode', 'activ
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Formats a frequency-like value into MHz/GHz text after normalizing to Hz. */
 function formatFreq(hz) {
-  if (hz == null) return '—';
-  if (hz >= 1_000_000_000) {
-    return (hz / 1_000_000_000).toLocaleString('en-US', { minimumFractionDigits: 5, maximumFractionDigits: 5 }) + ' GHz';
+  const f = parseFrequencyHz(hz);
+  if (f == null) return '—';
+  if (f >= 1_000_000_000) {
+    return (f / 1_000_000_000).toLocaleString('en-US', { minimumFractionDigits: 5, maximumFractionDigits: 5 }) + ' GHz';
   }
-  return (hz / 1_000_000).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' MHz';
+  return (f / 1_000_000).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' MHz';
 }
 
+/** Formats an ISO datetime string to UTC HH:MM for table display. */
 function formatTime(isoStr) {
   if (!isoStr) return '—';
   try {
@@ -88,15 +90,18 @@ function formatTime(isoStr) {
   }
 }
 
+/** Returns lowercase CSS token for source badge classes. */
 function sourceClass(source) {
   return (source || '').toLowerCase();
 }
 
+/** Persists in-memory callsign→country-code cache to localStorage. */
 function saveFlagCache() {
   try { localStorage.setItem(FLAG_CACHE_KEY, JSON.stringify(flagCache)); }
   catch { /* ignore quota/private mode errors */ }
 }
 
+/** Persists filter/sort/search UI state to localStorage. */
 function saveUiState() {
   try {
     localStorage.setItem(UI_STATE_KEY, JSON.stringify({
@@ -118,6 +123,7 @@ function saveUiState() {
   }
 }
 
+/** Reads persisted UI state payload from localStorage. */
 function loadUiState() {
   try {
     const raw = localStorage.getItem(UI_STATE_KEY);
@@ -130,6 +136,7 @@ function loadUiState() {
 
 // Restores filter/sort/search values into both the in-memory state objects
 // AND the corresponding DOM controls so they stay in sync after a page reload.
+/** Applies persisted UI state to runtime filter/table state and bound controls. */
 function applyUiState(state) {
   if (!state || typeof state !== 'object') return;
 
@@ -178,10 +185,12 @@ function applyUiState(state) {
 
 // For portable callsigns like YU/OK1WED/P the first segment is the DXCC prefix.
 // For home callsigns like F4JKY/P the first segment is the callsign itself.
+/** Returns left-most callsign token used as DXCC/country lookup base. */
 function callsignBase(cs) {
   return String(cs || '').toUpperCase().split('/')[0];
 }
 
+/** Normalizes country/entity names for deterministic lookup keys. */
 function normCountryName(v) {
   return String(v || '')
     .toLowerCase()
@@ -198,6 +207,7 @@ const DEPRECATED_ISO_CODES = new Set(['AN', 'BU', 'CS', 'DD', 'FX', 'NT', 'SU', 
 // Intl.DisplayNames. Intl returns the code itself (e.g. "ZZ") for unassigned
 // codes, so those are filtered out. First match wins to avoid overwriting a
 // valid code with a later collision.
+/** Builds display-name→ISO2 index by scanning valid AA–ZZ region codes. */
 function buildIsoNameIndex() {
   const out = {};
   const dn = new Intl.DisplayNames(['en'], { type: 'region' });
@@ -278,12 +288,14 @@ const callsignPrefixMap = [
   ['T30', 'ki'], ['T31', 'ki'], ['T32', 'ki'], ['T33', 'ki'],
 ];
 
+/** Maps a DXCC entity name to ISO2 flag code using aliases/index. */
 function flagCodeFromDxccName(dxccName) {
   const key = normCountryName(dxccName);
   if (!key) return '';
   return dxccNameAliases[key] || isoNameIndex[key] || '';
 }
 
+/** Infers ISO2 flag code from callsign prefix map. */
 function flagCodeFromCallsign(cs) {
   const base = callsignBase(cs);
   if (!base) return '';
@@ -295,6 +307,7 @@ function flagCodeFromCallsign(cs) {
 
 // DXCC name takes priority: a foreign station operating portable in another
 // DXCC entity should show the entity's flag, not its home callsign prefix.
+/** Resolves and caches best-effort flag code for a spot activator. */
 function resolveFlagCode(spot) {
   const key = callsignBase(spot.activator);
   if (!key) return '';
@@ -307,11 +320,13 @@ function resolveFlagCode(spot) {
   return cc;
 }
 
+/** Returns rendered reference text used in search/sort by source type. */
 function refsText(spot) {
   if (spot.source === 'DXPED') return spot.meta?.hamalert?.fullCallsign || '';
   return (spot.references || []).join(', ');
 }
 
+/** Sanitizes callsign for visible text output. */
 function sanitizeCallsignForText(v) {
   return String(v || '')
     .toUpperCase()
@@ -319,6 +334,7 @@ function sanitizeCallsignForText(v) {
     .trim();
 }
 
+/** Sanitizes callsign for URL/path/key-safe representation. */
 function sanitizeCallsignForUrl(v) {
   return String(v || '')
     .toUpperCase()
@@ -326,6 +342,7 @@ function sanitizeCallsignForUrl(v) {
     .trim();
 }
 
+/** Sanitizes reference token for URL usage. */
 function sanitizeReferenceForUrl(v) {
   return String(v || '')
     .toUpperCase()
@@ -333,6 +350,7 @@ function sanitizeReferenceForUrl(v) {
     .trim();
 }
 
+/** Returns trimmed text or em-dash placeholder for empty values. */
 function safeText(v) {
   const t = String(v || '').trim();
   return t || '—';
@@ -341,6 +359,7 @@ function safeText(v) {
 // Unicode regional indicator letters: adding 127397 to 'A'(65)…'Z'(90) maps
 // them to the Regional Indicator Symbols (U+1F1E6–U+1F1FF). Browsers that
 // support the emoji zwj sequences render the pair as a flag.
+/** Builds Unicode flag emoji from ISO2 code. */
 function countryFlagEmoji(cc) {
   const code = String(cc || '').toUpperCase();
   if (!/^[A-Z]{2}$/.test(code)) return '';
@@ -349,6 +368,7 @@ function countryFlagEmoji(cc) {
        + String.fromCodePoint(code.charCodeAt(1) + base);
 }
 
+/** Builds external reference URL per source provider. */
 function referenceUrl(source, ref) {
   const cleanRef = sanitizeReferenceForUrl(ref);
   if (!cleanRef) return '';
@@ -363,15 +383,38 @@ function referenceUrl(source, ref) {
   }
 }
 
+/** Lowercase text normalizer for loose text comparisons. */
 function normText(v) {
   return String(v || '').toLowerCase();
 }
 
+/** Canonical token normalizer for strict identity comparisons. */
 function normToken(v) {
   return String(v || '')
     .trim()
     .replace(/\s+/g, ' ')
     .toUpperCase();
+}
+
+/** Parses heterogeneous frequency input into integer Hz. */
+function parseFrequencyHz(v) {
+  if (v == null) return null;
+  if (typeof v === 'number' && Number.isFinite(v)) {
+    if (v >= 100000) return Math.round(v);         // already Hz
+    if (v > 0) return Math.round(v * 1_000_000);   // MHz
+    return null;
+  }
+  const raw = String(v).trim().toLowerCase();
+  if (!raw) return null;
+  const m = raw.match(/([0-9]+(?:\.[0-9]+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (raw.includes('ghz')) return Math.round(n * 1_000_000_000);
+  if (raw.includes('mhz')) return Math.round(n * 1_000_000);
+  if (raw.includes('khz')) return Math.round(n * 1_000);
+  if (raw.includes('hz'))  return Math.round(n);
+  return n >= 100000 ? Math.round(n) : Math.round(n * 1_000_000);
 }
 
 const MODE_FILTER = {
@@ -394,17 +437,19 @@ const MODE_FILTER = {
   WSPR: 'digi',
 };
 
+/** Maps raw mode to UI filter bucket (`cw|ssb|digi|other`). */
 function resolveFilterMode(spot) {
   const m = String(spot.mode || '').toUpperCase();
   return MODE_FILTER[m] ?? 'other';
 }
 
+/** Returns sortable primitive value for a spot/column pair. */
 function sortValue(spot, col) {
   switch (col) {
     case 'time':      return new Date(spot.spot_time).getTime() || 0;
     case 'source':    return normText(spot.source);
     case 'band':      return normText(spot.band);
-    case 'frequency': return Number(spot.frequency) || 0;
+    case 'frequency': return parseFrequencyHz(spot.frequency) || 0;
     case 'mode':      return normText(spot.mode);
     case 'activator': return normText(spot.activator);
     case 'continent': return normText(spot.continent || 'UNK');
@@ -414,6 +459,7 @@ function sortValue(spot, col) {
   }
 }
 
+/** Returns normalized, sorted, comma-joined reference identity token. */
 function normalizedRefs(spot) {
   return (spot.references || [])
     .map(sanitizeReferenceForUrl)
@@ -423,23 +469,27 @@ function normalizedRefs(spot) {
     .join(',');
 }
 
-function dedupeKey(spot) {
+/** Returns operation reference token, with DXPED fallback to full callsign. */
+function operationRefToken(spot) {
+  const refs = normalizedRefs(spot);
+  if (refs) return refs;
+  if (normToken(spot.source) === 'DXPED') {
+    const full = sanitizeCallsignForUrl(spot.meta?.hamalert?.fullCallsign);
+    return normToken(full) || '-';
+  }
+  return '-';
+}
+
+/** Builds stable operation identity key: source + activator + reference token. */
+function operationKey(spot) {
   const source = normToken(spot.source);
   if (!source) return `UNK|${spot.id}`;
-  if (source === 'DXPED') return `DXPED|${spot.id}`;
   const activator = normToken(sanitizeCallsignForUrl(spot.activator)) || '-';
-  const refs = normalizedRefs(spot) || '-';
-  const band = normToken(spot.band) || '-';
-  const mode = normToken(spot.mode) || '-';
-  return `${source}|${activator}|${refs}|${band}|${mode}`;
+  const ref = operationRefToken(spot);
+  return `${source}|${activator}|${ref}`;
 }
 
-function pickBucketWinner(bucket) {
-  let winner = null;
-  for (const spot of bucket.values()) winner = spot;
-  return winner; // last inserted in the bucket (arrival-order winner)
-}
-
+/** Returns all rendered spots sorted by current table sort configuration. */
 function sortedSpots() {
   const dir = tableState.sortDir === 'asc' ? 1 : -1;
   const col = tableState.sortBy;
@@ -455,6 +505,7 @@ function sortedSpots() {
   });
 }
 
+/** Applies source/mode/continent/band/qrt/search filters to a spot. */
 function spotVisible(spot) {
   if (!filters.sources.has(spot.source))            return false;
   if (!filters.modes.has(resolveFilterMode(spot)))  return false;
@@ -467,6 +518,7 @@ function spotVisible(spot) {
   return true;
 }
 
+/** Builds a complete table row DOM node from spot payload data. */
 function buildRow(spot) {
   const tr = document.createElement('tr');
   tr.id = `row-${CSS.escape(spot.id)}`;
@@ -588,6 +640,7 @@ function buildRow(spot) {
 // Removes the class first, forces a reflow by reading offsetWidth (which flushes
 // pending style changes), then re-adds it — this resets the CSS animation so it
 // plays again even if the row was already flashing.
+/** Restarts flash animation class for add/update row highlighting. */
 function flash(tr, cls) {
   tr.classList.remove('flash-new', 'flash-upd');
   void tr.offsetWidth;
@@ -595,6 +648,7 @@ function flash(tr, cls) {
   tr.addEventListener('animationend', () => tr.classList.remove(cls), { once: true });
 }
 
+/** Synchronizes sort header CSS classes with current table sort state. */
 function updateSortHeaderUi() {
   sortHeads.forEach(th => {
     th.classList.remove('sort-asc', 'sort-desc');
@@ -603,6 +657,7 @@ function updateSortHeaderUi() {
   });
 }
 
+/** Rebuilds visible table body from current `spots` map and active filters. */
 function renderTable() {
   tbody.querySelectorAll('tr[data-id]').forEach(r => r.remove());
   sortedSpots().forEach(spot => {
@@ -611,6 +666,7 @@ function renderTable() {
   });
 }
 
+/** Toggles placeholder row based on whether any spot passes filters. */
 function updateEmptyRow() {
   const hasVisible = [...spots.values()].some(spotVisible);
   emptyRow.classList.toggle('hidden', hasVisible);
@@ -620,6 +676,7 @@ function updateEmptyRow() {
   }
 }
 
+/** Recomputes visible counters and renders summary stats bar. */
 function updateStats() {
   const visible = [...spots.values()].filter(spotVisible);
   const bySource = { DXPED: 0, IOTA: 0, POTA: 0, SOTA: 0, WWBOTA: 0, WWFF: 0 };
@@ -637,6 +694,7 @@ function updateStats() {
   `;
 }
 
+/** Pulls current users/sessions presence from BFF `/ready` endpoint. */
 async function refreshReadyStatus() {
   try {
     const res = await fetch(READY_URL, { cache: 'no-store' });
@@ -651,6 +709,7 @@ async function refreshReadyStatus() {
   }
 }
 
+/** Starts periodic `/ready` polling and triggers an immediate first refresh. */
 function startReadyStatusPolling() {
   refreshReadyStatus();
   setInterval(refreshReadyStatus, 120000);
@@ -658,6 +717,7 @@ function startReadyStatusPolling() {
 
 // ── Spot management ───────────────────────────────────────────────────────────
 
+/** Inserts a rendered row in sorted position among currently visible rows. */
 function insertRowSorted(newTr, spot) {
   const col = tableState.sortBy;
   const dir = tableState.sortDir === 'asc' ? 1 : -1;
@@ -679,6 +739,7 @@ function insertRowSorted(newTr, spot) {
   tbody.insertBefore(newTr, emptyRow);
 }
 
+/** Adds a spot row (if visible), replacing any existing row with same id. */
 function addSpot(spot) {
   const existing = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
   if (existing) existing.remove();
@@ -691,6 +752,7 @@ function addSpot(spot) {
   updateStats();
 }
 
+/** Re-renders and re-inserts an updated spot row while preserving sort order. */
 function updateSpot(spot) {
   const existing = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
   if (existing) existing.remove();
@@ -703,6 +765,7 @@ function updateSpot(spot) {
   updateStats();
 }
 
+/** Removes a rendered row by row id and refreshes empty/stats indicators. */
 function removeSpot(id) {
   const row = tbody.querySelector(`#row-${CSS.escape(id)}`);
   if (row) row.remove();
@@ -710,95 +773,76 @@ function removeSpot(id) {
   updateStats();
 }
 
-function syncBucketWinner(key, flashClass = null) {
-  const bucket = spotBuckets.get(key);
-  const prevWinnerId = spotWinnerByKey.get(key) || null;
-  const prevWinnerSpot = prevWinnerId ? spots.get(prevWinnerId) : null;
-  const nextWinner = bucket ? pickBucketWinner(bucket) : null;
-  const nextWinnerId = nextWinner ? nextWinner.id : null;
+/** Upserts an operation-keyed spot and applies minimal UI update/reposition logic. */
+function upsertOperationSpot(incoming, flashClass = null) {
+  const key = operationKey(incoming);
+  const next = { ...incoming, id: key };
+  const prev = spots.get(key) || null;
 
-  if (!nextWinner) {
-    if (prevWinnerId != null) {
-      spotWinnerByKey.delete(key);
-      spots.delete(prevWinnerId);
-      removeSpot(prevWinnerId);
-    }
+  operationByRawId.set(incoming.id, key);
+  currentRawByOperation.set(key, incoming.id);
+  spots.set(key, next);
+
+  const wasVisible = !!prev && spotVisible(prev);
+  const isVisible = spotVisible(next);
+  if (!wasVisible && isVisible) {
+    addSpot(next);
+    return;
+  }
+  if (wasVisible && !isVisible) {
+    removeSpot(key);
+    return;
+  }
+  if (!isVisible) return;
+
+  if (!prev) {
+    addSpot(next);
     return;
   }
 
-  spotWinnerByKey.set(key, nextWinnerId);
-  spots.set(nextWinnerId, nextWinner);
-
-  if (prevWinnerId && prevWinnerId !== nextWinnerId) {
-    spots.delete(prevWinnerId);
-    removeSpot(prevWinnerId);
+  const sortCol = tableState.sortBy;
+  const sortChanged = sortValue(prev, sortCol) !== sortValue(next, sortCol);
+  if (sortChanged) {
+    updateSpot(next);
+    return;
   }
 
-  const winnerChanged = prevWinnerId !== nextWinnerId;
-  const winnerUpdated = !winnerChanged && !!prevWinnerSpot
-    && JSON.stringify(prevWinnerSpot) !== JSON.stringify(nextWinner);
-  if (!winnerChanged && !winnerUpdated) return;
-
-  if (flashClass === 'flash-new') addSpot(nextWinner);
-  else if (flashClass === 'flash-upd') updateSpot(nextWinner);
+  const existing = tbody.querySelector(`#row-${CSS.escape(key)}`);
+  if (!existing) {
+    addSpot(next);
+    return;
+  }
+  const replacement = buildRow(next);
+  existing.replaceWith(replacement);
+  if (flashClass) flash(replacement, flashClass);
+  updateEmptyRow();
+  updateStats();
 }
 
-function ingestSpot(spot, flashClass = null) {
-  const key = dedupeKey(spot);
-  const prevKey = spotKeyById.get(spot.id);
-  if (prevKey && prevKey !== key) {
-    const prevBucket = spotBuckets.get(prevKey);
-    if (prevBucket) {
-      prevBucket.delete(spot.id);
-      if (prevBucket.size === 0) spotBuckets.delete(prevKey);
-      syncBucketWinner(prevKey, null);
-    }
-  }
-
-  let bucket = spotBuckets.get(key);
-  if (!bucket) {
-    bucket = new Map();
-    spotBuckets.set(key, bucket);
-  }
-  bucket.set(spot.id, spot);
-  spotKeyById.set(spot.id, key);
-  syncBucketWinner(key, flashClass);
-}
-
+/** Removes operation row only when remove event targets current latest raw id. */
 function removeRawSpot(id) {
-  const key = spotKeyById.get(id);
+  const key = operationByRawId.get(id);
   if (!key) return;
-  spotKeyById.delete(id);
-  const bucket = spotBuckets.get(key);
-  if (!bucket) return;
-  bucket.delete(id);
-  if (bucket.size === 0) spotBuckets.delete(key);
-  syncBucketWinner(key, null);
+  operationByRawId.delete(id);
+  if (currentRawByOperation.get(key) !== id) return; // stale remove for older raw event
+  currentRawByOperation.delete(key);
+  spots.delete(key);
+  removeSpot(key);
 }
 
 // Full replacement: the BFF sends the current live snapshot on (re)connect,
 // so we discard any previously cached spots before loading the new list.
+/** Loads full init snapshot, deduped by operation key (last event wins). */
 function loadInit(spotList) {
   spots.clear();
-  spotBuckets.clear();
-  spotKeyById.clear();
-  spotWinnerByKey.clear();
+  operationByRawId.clear();
+  currentRawByOperation.clear();
   spotList.forEach(s => {
-    const key = dedupeKey(s);
-    let bucket = spotBuckets.get(key);
-    if (!bucket) {
-      bucket = new Map();
-      spotBuckets.set(key, bucket);
-    }
-    bucket.set(s.id, s);
-    spotKeyById.set(s.id, key);
+    const key = operationKey(s);
+    spots.set(key, { ...s, id: key }); // last spot in init list wins per operation
+    operationByRawId.set(s.id, key);
+    currentRawByOperation.set(key, s.id);
   });
-  for (const [key, bucket] of spotBuckets.entries()) {
-    const winner = pickBucketWinner(bucket);
-    if (!winner) continue;
-    spotWinnerByKey.set(key, winner.id);
-    spots.set(winner.id, winner);
-  }
   renderTable();
   updateEmptyRow();
   updateStats();
@@ -808,6 +852,7 @@ function loadInit(spotList) {
 
 let es = null;
 
+/** Updates connection status indicator text and dot style. */
 function setConnState(state) {
   connDot.className = 'conn-dot ' + state;
   connLabel.textContent = {
@@ -817,6 +862,7 @@ function setConnState(state) {
   }[state] || state;
 }
 
+/** Opens EventSource connection and wires init/add/update/remove handlers. */
 function connect() {
   setConnState('wait');
   if (es) { es.close(); es = null; }
@@ -829,11 +875,11 @@ function connect() {
   });
 
   es.addEventListener('add', (e) => {
-    try { const { spot } = JSON.parse(e.data); ingestSpot(spot, 'flash-new'); } catch (err) { console.error('add parse error', err); }
+    try { const { spot } = JSON.parse(e.data); upsertOperationSpot(spot, 'flash-new'); } catch (err) { console.error('add parse error', err); }
   });
 
   es.addEventListener('update', (e) => {
-    try { const { spot } = JSON.parse(e.data); ingestSpot(spot, 'flash-upd'); } catch (err) { console.error('update parse error', err); }
+    try { const { spot } = JSON.parse(e.data); upsertOperationSpot(spot, 'flash-upd'); } catch (err) { console.error('update parse error', err); }
   });
 
   es.addEventListener('remove', (e) => {
@@ -850,6 +896,7 @@ function connect() {
 
 // ── Filter wiring ─────────────────────────────────────────────────────────────
 
+/** Re-renders table and stats after any filter/sort/search control change. */
 function refilter() {
   renderTable();
   updateEmptyRow();
@@ -857,6 +904,7 @@ function refilter() {
   saveUiState();
 }
 
+/** Restores default sorting (`time desc`). */
 function resetSortToDefault() {
   tableState.sortBy = 'time';
   tableState.sortDir = 'desc';
@@ -865,6 +913,7 @@ function resetSortToDefault() {
 
 // Single delegated listener on the group container — handles all toggle buttons
 // inside without attaching one listener per button.
+/** Wires delegated toggle-button clicks to a target filter set. */
 function wireToggleGroup(containerId, filterSet) {
   const container = document.getElementById(containerId);
   container.addEventListener('click', (e) => {
@@ -942,6 +991,7 @@ document.getElementById('btn-clear').addEventListener('click', () => {
 const CHANGELOG_SEEN_KEY = 'odx:changelog_seen_v1';
 
 // Extracts the date and bullet list from the topmost entry in the Markdown file.
+/** Parses top changelog entry date and bullet list from markdown text. */
 function parseChangelog(mdText) {
   const dateRe = /^\d{4}-\d{2}-\d{2}$/;
   let date = null;
@@ -959,6 +1009,7 @@ function parseChangelog(mdText) {
   return { date, bullets };
 }
 
+/** Builds changelog overlay modal DOM and dismissal behavior. */
 function buildChangelogModal(date, bullets) {
   const dismiss = () => {
     try { localStorage.setItem(CHANGELOG_SEEN_KEY, date); } catch { /* quota/private */ }
@@ -1007,6 +1058,7 @@ function buildChangelogModal(date, bullets) {
   return overlay;
 }
 
+/** Fetches changelog and shows modal when latest date was not seen yet. */
 async function checkChangelog() {
   try {
     const res = await fetch('Changelog.md');
