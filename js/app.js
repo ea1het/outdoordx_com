@@ -645,6 +645,8 @@ function insertRowSorted(newTr, spot) {
 
 function addSpot(spot) {
   spots.set(spot.id, spot);
+  const existing = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
+  if (existing) existing.remove();
   if (spotVisible(spot)) {
     const tr = buildRow(spot);
     insertRowSorted(tr, spot);
