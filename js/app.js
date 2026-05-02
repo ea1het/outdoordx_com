@@ -23,8 +23,19 @@ const READY_URL = (function () {
 const GITHUB_LATEST_COMMIT_URL = 'https://api.github.com/repos/ea1het/outdoordx_com/commits/gh-pages';
 
 // ── State ───────────────────────────────────────────────────────────────────
+// Canonical live UI state (one row per logical operation).
+// Key: stable `operationKey` (source + callsign + reference token)
+// Value: latest spot payload chosen for that operation.
 const spots = new Map();   // operationKey → rendered spot (stable row id)
+
+// Reverse lookup from transport/event identity to UI identity.
+// The BFF may emit different raw ids over time for the same logical operation,
+// so this map lets remove/update events resolve back to the canonical UI row.
 const operationByRawId = new Map(); // raw SSE id → operationKey
+
+// Guards against stale removes:
+// only the remove for the *current* raw id of an operation is allowed to delete
+// the row. If an older raw id arrives later, it is ignored safely.
 const currentRawByOperation = new Map(); // operationKey → latest raw SSE id
 
 const filters = {
@@ -483,7 +494,16 @@ function operationRefToken(spot) {
   return '-';
 }
 
-/** Builds stable operation identity key: source + activator + reference token. */
+/**
+ * Builds stable operation identity key: source + activator + reference token.
+ *
+ * IMPORTANT:
+ * - Frequency and time are intentionally excluded.
+ * - Frequency may drift slightly while remaining the same activation.
+ * - Time always changes with new reports and must not create new identities.
+ * - Source must be included so the same callsign/reference across different
+ *   providers (POTA/SOTA/WWFF/...) remains distinct.
+ */
 function operationKey(spot) {
   const source = normToken(spot.source);
   if (!source) return `UNK|${spot.id}`;
@@ -519,20 +539,46 @@ function findOperationKeysByDisplayIdentity(spot) {
   return keys;
 }
 
-/** Returns all rendered spots sorted by current table sort configuration. */
+/**
+ * Returns all rendered spots sorted by active table sort.
+ * This function is the source of truth for ordering during full table renders.
+ */
 function sortedSpots() {
+  return [...spots.values()].sort(compareSpotsByActiveSort);
+}
+
+/**
+ * Compares two spots by active user sort, using time only as tie-breaker.
+ *
+ * Sort contract:
+ * 1) Primary key is ALWAYS the user-selected column (`tableState.sortBy`).
+ * 2) If primary key ties, compare by time in the SAME direction as active sort.
+ * 3) If still tied, compare by id for deterministic ordering across browsers.
+ *
+ * This comparator is reused in:
+ * - data-level sorting (`sortedSpots`)
+ * - DOM-level reordering (`enforceSortedDomOrder`)
+ *
+ * Reusing one comparator prevents drift where incremental UI updates could
+ * order rows differently than full renders.
+ */
+function compareSpotsByActiveSort(a, b) {
   const dir = tableState.sortDir === 'asc' ? 1 : -1;
   const col = tableState.sortBy;
-  return [...spots.values()].sort((a, b) => {
-    const av = sortValue(a, col);
-    const bv = sortValue(b, col);
-    if (av < bv) return -1 * dir;
-    if (av > bv) return 1 * dir;
-    // stable secondary sort: newest first
-    const at = new Date(a.spot_time).getTime() || 0;
-    const bt = new Date(b.spot_time).getTime() || 0;
-    return bt - at;
-  });
+  const av = sortValue(a || {}, col);
+  const bv = sortValue(b || {}, col);
+  if (av < bv) return -1 * dir;
+  if (av > bv) return 1 * dir;
+  const at = new Date(a?.spot_time).getTime() || 0;
+  const bt = new Date(b?.spot_time).getTime() || 0;
+  if (at < bt) return -1 * dir;
+  if (at > bt) return 1 * dir;
+  // deterministic fallback to avoid browser-dependent unstable ordering
+  const aid = String(a?.id || '');
+  const bid = String(b?.id || '');
+  if (aid < bid) return -1;
+  if (aid > bid) return 1;
+  return 0;
 }
 
 /** Applies source/mode/continent/band/qrt/search filters to a spot. */
@@ -694,20 +740,39 @@ function renderTable() {
     if (!spotVisible(spot)) return;
     tbody.appendChild(buildRow(spot));
   });
+  enforceSortedDomOrder();
 }
 
-/** Enforces DOM row order to match current sort/filter state without full rebuild. */
+/**
+ * Enforces DOM row order to match current sort/filter state without full rebuild.
+ *
+ * Why this exists:
+ * - Live SSE updates can replace or touch rows incrementally.
+ * - Even with correct map state, stale DOM order can happen if nodes linger.
+ *
+ * This pass:
+ * 1) removes orphan/duplicate rendered rows,
+ * 2) sorts existing visible row nodes with the same comparator used by data,
+ * 3) re-inserts nodes in canonical order before the empty placeholder row.
+ */
 function enforceSortedDomOrder() {
   cleanupRenderedRows();
-  const visibleSortedIds = sortedSpots().filter(spotVisible).map(s => s.id);
-  visibleSortedIds.forEach(id => {
-    const row = tbody.querySelector(`#row-${CSS.escape(id)}`);
-    if (!row) return;
-    tbody.insertBefore(row, emptyRow);
+  const rows = [...tbody.querySelectorAll('tr[data-id]')];
+  rows.sort((ra, rb) => {
+    const a = spots.get(ra.dataset.id);
+    const b = spots.get(rb.dataset.id);
+    return compareSpotsByActiveSort(a, b);
   });
+  rows.forEach(row => tbody.insertBefore(row, emptyRow));
 }
 
-/** Removes rendered rows that are no longer present in state and duplicate row ids. */
+/**
+ * Removes rendered rows that are no longer present in state and duplicate row ids.
+ *
+ * This is defensive cleanup for incremental updates:
+ * - orphan rows: DOM nodes whose ids no longer exist in `spots`
+ * - duplicate ids: more than one DOM row with same data-id
+ */
 function cleanupRenderedRows() {
   const seen = new Set();
   tbody.querySelectorAll('tr[data-id]').forEach(row => {
@@ -845,7 +910,21 @@ function removeSpot(id) {
   updateStats();
 }
 
-/** Upserts an operation-keyed spot and applies minimal UI update/reposition logic. */
+/**
+ * Upserts incoming SSE spot into canonical operation state.
+ *
+ * Dedupe/merge rules implemented here:
+ * - Canonical identity is `operationKey(spot)` (source + callsign + reference).
+ * - Additional fallback matching by visible identity is applied to merge rows
+ *   that look identical to users even if payload structure differs.
+ * - When multiple keys map to the same visible identity, collapse to one row.
+ * - Incoming event always becomes the latest state for that operation.
+ *
+ * Rendering strategy:
+ * - After state update, run full `renderTable()` to guarantee active sort/filter
+ *   is reapplied exactly as selected by user after every live update.
+ * - Optional row flash is applied post-render if row is visible.
+ */
 function upsertOperationSpot(incoming, flashClass = null) {
   const keyed = operationKey(incoming);
   const matchingKeys = findOperationKeysByDisplayIdentity(incoming);
@@ -878,7 +957,12 @@ function upsertOperationSpot(incoming, flashClass = null) {
   }
 }
 
-/** Removes operation row only when remove event targets current latest raw id. */
+/**
+ * Removes operation row only when remove event targets current latest raw id.
+ *
+ * If remove arrives for an older raw id, it is ignored. This prevents races
+ * where out-of-order transport events could delete the wrong (newer) row.
+ */
 function removeRawSpot(id) {
   const key = operationByRawId.get(id);
   if (!key) return;
@@ -893,7 +977,15 @@ function removeRawSpot(id) {
 
 // Full replacement: the BFF sends the current live snapshot on (re)connect,
 // so we discard any previously cached spots before loading the new list.
-/** Loads full init snapshot, deduped by operation key (last event wins). */
+/**
+ * Loads full init snapshot.
+ *
+ * Snapshot policy:
+ * - Clear prior UI state.
+ * - Rebuild by operation key.
+ * - If snapshot contains repeated entries for same operation, last one wins.
+ * - Perform one full render at the end.
+ */
 function loadInit(spotList) {
   spots.clear();
   operationByRawId.clear();
