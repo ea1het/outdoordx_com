@@ -489,6 +489,23 @@ function operationKey(spot) {
   return `${source}|${activator}|${ref}`;
 }
 
+/** Builds a screen-level identity from visible equality fields. */
+function displayIdentityKey(spot) {
+  const source = normToken(spot.source) || 'UNK';
+  const activator = normToken(sanitizeCallsignForText(spot.activator)) || '-';
+  const reference = normToken(refsText(spot)) || '-';
+  return `${source}|${activator}|${reference}`;
+}
+
+/** Finds current operation key by screen-level identity across existing rows. */
+function findOperationKeyByDisplayIdentity(spot) {
+  const target = displayIdentityKey(spot);
+  for (const [key, rowSpot] of spots.entries()) {
+    if (displayIdentityKey(rowSpot) === target) return key;
+  }
+  return null;
+}
+
 /** Returns all rendered spots sorted by current table sort configuration. */
 function sortedSpots() {
   const dir = tableState.sortDir === 'asc' ? 1 : -1;
@@ -666,6 +683,16 @@ function renderTable() {
   });
 }
 
+/** Enforces DOM row order to match current sort/filter state without full rebuild. */
+function enforceSortedDomOrder() {
+  const visibleSortedIds = sortedSpots().filter(spotVisible).map(s => s.id);
+  visibleSortedIds.forEach(id => {
+    const row = tbody.querySelector(`#row-${CSS.escape(id)}`);
+    if (!row) return;
+    tbody.insertBefore(row, emptyRow);
+  });
+}
+
 /** Toggles placeholder row based on whether any spot passes filters. */
 function updateEmptyRow() {
   const hasVisible = [...spots.values()].some(spotVisible);
@@ -775,9 +802,18 @@ function removeSpot(id) {
 
 /** Upserts an operation-keyed spot and applies minimal UI update/reposition logic. */
 function upsertOperationSpot(incoming, flashClass = null) {
-  const key = operationKey(incoming);
+  const keyed = operationKey(incoming);
+  const matched = findOperationKeyByDisplayIdentity(incoming);
+  const key = matched || keyed;
   const next = { ...incoming, id: key };
   const prev = spots.get(key) || null;
+
+  if (matched && matched !== keyed) {
+    const previouslyMappedRaw = currentRawByOperation.get(keyed);
+    if (previouslyMappedRaw != null) operationByRawId.delete(previouslyMappedRaw);
+    spots.delete(keyed);
+    removeSpot(keyed);
+  }
 
   operationByRawId.set(incoming.id, key);
   currentRawByOperation.set(key, incoming.id);
@@ -791,12 +827,14 @@ function upsertOperationSpot(incoming, flashClass = null) {
   }
   if (wasVisible && !isVisible) {
     removeSpot(key);
+    enforceSortedDomOrder();
     return;
   }
   if (!isVisible) return;
 
   if (!prev) {
     addSpot(next);
+    enforceSortedDomOrder();
     return;
   }
 
@@ -804,6 +842,7 @@ function upsertOperationSpot(incoming, flashClass = null) {
   const sortChanged = sortValue(prev, sortCol) !== sortValue(next, sortCol);
   if (sortChanged) {
     updateSpot(next);
+    enforceSortedDomOrder();
     return;
   }
 
@@ -815,6 +854,7 @@ function upsertOperationSpot(incoming, flashClass = null) {
   const replacement = buildRow(next);
   existing.replaceWith(replacement);
   if (flashClass) flash(replacement, flashClass);
+  enforceSortedDomOrder();
   updateEmptyRow();
   updateStats();
 }
@@ -828,6 +868,7 @@ function removeRawSpot(id) {
   currentRawByOperation.delete(key);
   spots.delete(key);
   removeSpot(key);
+  enforceSortedDomOrder();
 }
 
 // Full replacement: the BFF sends the current live snapshot on (re)connect,
