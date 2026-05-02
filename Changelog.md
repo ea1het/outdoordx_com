@@ -2,6 +2,7 @@
 
 2026-05-02
 
+- Live sort now preserved when new spots arrive. Previously any `add` or `update` SSE event reset the sort to time-descending so the new spot surfaced at the top. Now the active sort is kept: new and updated spots are inserted directly into their correct sorted position in the DOM (`insertRowSorted`), and removals delete only the affected row — no full table rebuild on incremental changes.
 - Updated stats bar wording on desktop from "`N spots`" to `Total activations: N - Users/Sessions active: X/Y`.
 - Mobile stats-bar behavior adjusted so only source counters are shown (DXped/IOTA/POTA/SOTA/WWBOTA/WWFF), with desktop activation/session text hidden and the counters centered.
 

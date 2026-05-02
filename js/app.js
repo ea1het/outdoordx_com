@@ -614,35 +614,55 @@ function startReadyStatusPolling() {
 
 // ── Spot management ───────────────────────────────────────────────────────────
 
+function insertRowSorted(newTr, spot) {
+  const col = tableState.sortBy;
+  const dir = tableState.sortDir === 'asc' ? 1 : -1;
+  const newVal = sortValue(spot, col);
+  const newTime = new Date(spot.spot_time).getTime() || 0;
+  for (const row of tbody.querySelectorAll('tr[data-id]')) {
+    const rowSpot = spots.get(row.dataset.id);
+    if (!rowSpot) continue;
+    const rowVal = sortValue(rowSpot, col);
+    let before;
+    if (newVal < rowVal)      before = dir > 0;
+    else if (newVal > rowVal) before = dir < 0;
+    else {
+      const rowTime = new Date(rowSpot.spot_time).getTime() || 0;
+      before = newTime > rowTime;
+    }
+    if (before) { tbody.insertBefore(newTr, row); return; }
+  }
+  tbody.insertBefore(newTr, emptyRow);
+}
+
 function addSpot(spot) {
   spots.set(spot.id, spot);
-  // Always reset to newest-first so the new spot appears at the top.
-  tableState.sortBy = 'time';
-  tableState.sortDir = 'desc';
-  updateSortHeaderUi();
-  renderTable();
-  const tr = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
-  if (tr) flash(tr, 'flash-new');
+  if (spotVisible(spot)) {
+    const tr = buildRow(spot);
+    insertRowSorted(tr, spot);
+    flash(tr, 'flash-new');
+  }
   updateEmptyRow();
   updateStats();
 }
 
 function updateSpot(spot) {
   spots.set(spot.id, spot);
-  // Same reset as addSpot: an updated spot is still a fresh event worth surfacing.
-  tableState.sortBy = 'time';
-  tableState.sortDir = 'desc';
-  updateSortHeaderUi();
-  renderTable();
-  const tr = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
-  if (tr) flash(tr, 'flash-upd');
+  const existing = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
+  if (existing) existing.remove();
+  if (spotVisible(spot)) {
+    const tr = buildRow(spot);
+    insertRowSorted(tr, spot);
+    flash(tr, 'flash-upd');
+  }
   updateEmptyRow();
   updateStats();
 }
 
 function removeSpot(id) {
   spots.delete(id);
-  renderTable();
+  const row = tbody.querySelector(`#row-${CSS.escape(id)}`);
+  if (row) row.remove();
   updateEmptyRow();
   updateStats();
 }
