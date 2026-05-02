@@ -69,7 +69,10 @@ const SORT_COLS = new Set(['time', 'source', 'band', 'frequency', 'mode', 'activ
 
 function formatFreq(hz) {
   if (hz == null) return '—';
-  return (hz / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (hz >= 1_000_000_000) {
+    return (hz / 1_000_000_000).toLocaleString('en-US', { minimumFractionDigits: 5, maximumFractionDigits: 5 }) + ' GHz';
+  }
+  return (hz / 1_000_000).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' MHz';
 }
 
 function formatTime(isoStr) {
