@@ -21,7 +21,10 @@ const READY_URL = (function () {
 })();
 
 // ── State ───────────────────────────────────────────────────────────────────
-const spots = new Map();   // id → spot
+const spots = new Map();   // winnerId → winner spot (rendered rows)
+const spotBuckets = new Map(); // dedupeKey → Map(rawSpotId → raw spot)
+const spotKeyById = new Map(); // rawSpotId → dedupeKey
+const spotWinnerByKey = new Map(); // dedupeKey → winnerId
 
 const filters = {
   sources:    new Set(['DXPED', 'IOTA', 'POTA', 'SOTA', 'WWFF', 'WWBOTA']),
@@ -404,6 +407,31 @@ function sortValue(spot, col) {
   }
 }
 
+function normalizedRefs(spot) {
+  return (spot.references || [])
+    .map(sanitizeReferenceForUrl)
+    .filter(Boolean)
+    .sort()
+    .join(',');
+}
+
+function dedupeKey(spot) {
+  const source = String(spot.source || '').toUpperCase();
+  if (!source) return `UNK|${spot.id}`;
+  if (source === 'DXPED') return `DXPED|${spot.id}`;
+  const activator = sanitizeCallsignForUrl(spot.activator) || '-';
+  const refs = normalizedRefs(spot) || '-';
+  const band = String(spot.band || '').toUpperCase() || '-';
+  const mode = String(spot.mode || '').toUpperCase() || '-';
+  return `${source}|${activator}|${refs}|${band}|${mode}`;
+}
+
+function pickBucketWinner(bucket) {
+  let winner = null;
+  for (const spot of bucket.values()) winner = spot;
+  return winner; // last inserted in the bucket (arrival-order winner)
+}
+
 function sortedSpots() {
   const dir = tableState.sortDir === 'asc' ? 1 : -1;
   const col = tableState.sortBy;
@@ -644,7 +672,6 @@ function insertRowSorted(newTr, spot) {
 }
 
 function addSpot(spot) {
-  spots.set(spot.id, spot);
   const existing = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
   if (existing) existing.remove();
   if (spotVisible(spot)) {
@@ -657,7 +684,6 @@ function addSpot(spot) {
 }
 
 function updateSpot(spot) {
-  spots.set(spot.id, spot);
   const existing = tbody.querySelector(`#row-${CSS.escape(spot.id)}`);
   if (existing) existing.remove();
   if (spotVisible(spot)) {
@@ -670,18 +696,101 @@ function updateSpot(spot) {
 }
 
 function removeSpot(id) {
-  spots.delete(id);
   const row = tbody.querySelector(`#row-${CSS.escape(id)}`);
   if (row) row.remove();
   updateEmptyRow();
   updateStats();
 }
 
+function syncBucketWinner(key, flashClass = null) {
+  const bucket = spotBuckets.get(key);
+  const prevWinnerId = spotWinnerByKey.get(key) || null;
+  const prevWinnerSpot = prevWinnerId ? spots.get(prevWinnerId) : null;
+  const nextWinner = bucket ? pickBucketWinner(bucket) : null;
+  const nextWinnerId = nextWinner ? nextWinner.id : null;
+
+  if (!nextWinner) {
+    if (prevWinnerId != null) {
+      spotWinnerByKey.delete(key);
+      spots.delete(prevWinnerId);
+      removeSpot(prevWinnerId);
+    }
+    return;
+  }
+
+  spotWinnerByKey.set(key, nextWinnerId);
+  spots.set(nextWinnerId, nextWinner);
+
+  if (prevWinnerId && prevWinnerId !== nextWinnerId) {
+    spots.delete(prevWinnerId);
+    removeSpot(prevWinnerId);
+  }
+
+  const winnerChanged = prevWinnerId !== nextWinnerId;
+  const winnerUpdated = !winnerChanged && !!prevWinnerSpot
+    && JSON.stringify(prevWinnerSpot) !== JSON.stringify(nextWinner);
+  if (!winnerChanged && !winnerUpdated) return;
+
+  if (flashClass === 'flash-new') addSpot(nextWinner);
+  else if (flashClass === 'flash-upd') updateSpot(nextWinner);
+}
+
+function ingestSpot(spot, flashClass = null) {
+  const key = dedupeKey(spot);
+  const prevKey = spotKeyById.get(spot.id);
+  if (prevKey && prevKey !== key) {
+    const prevBucket = spotBuckets.get(prevKey);
+    if (prevBucket) {
+      prevBucket.delete(spot.id);
+      if (prevBucket.size === 0) spotBuckets.delete(prevKey);
+      syncBucketWinner(prevKey, null);
+    }
+  }
+
+  let bucket = spotBuckets.get(key);
+  if (!bucket) {
+    bucket = new Map();
+    spotBuckets.set(key, bucket);
+  }
+  bucket.set(spot.id, spot);
+  spotKeyById.set(spot.id, key);
+  syncBucketWinner(key, flashClass);
+}
+
+function removeRawSpot(id) {
+  const key = spotKeyById.get(id);
+  if (!key) return;
+  spotKeyById.delete(id);
+  const bucket = spotBuckets.get(key);
+  if (!bucket) return;
+  bucket.delete(id);
+  if (bucket.size === 0) spotBuckets.delete(key);
+  syncBucketWinner(key, null);
+}
+
 // Full replacement: the BFF sends the current live snapshot on (re)connect,
 // so we discard any previously cached spots before loading the new list.
 function loadInit(spotList) {
   spots.clear();
-  spotList.forEach(s => spots.set(s.id, s));
+  spotBuckets.clear();
+  spotKeyById.clear();
+  spotWinnerByKey.clear();
+  spotList.forEach(s => {
+    const key = dedupeKey(s);
+    let bucket = spotBuckets.get(key);
+    if (!bucket) {
+      bucket = new Map();
+      spotBuckets.set(key, bucket);
+    }
+    bucket.set(s.id, s);
+    spotKeyById.set(s.id, key);
+  });
+  for (const [key, bucket] of spotBuckets.entries()) {
+    const winner = pickBucketWinner(bucket);
+    if (!winner) continue;
+    spotWinnerByKey.set(key, winner.id);
+    spots.set(winner.id, winner);
+  }
   renderTable();
   updateEmptyRow();
   updateStats();
@@ -712,15 +821,15 @@ function connect() {
   });
 
   es.addEventListener('add', (e) => {
-    try { const { spot } = JSON.parse(e.data); addSpot(spot); } catch (err) { console.error('add parse error', err); }
+    try { const { spot } = JSON.parse(e.data); ingestSpot(spot, 'flash-new'); } catch (err) { console.error('add parse error', err); }
   });
 
   es.addEventListener('update', (e) => {
-    try { const { spot } = JSON.parse(e.data); updateSpot(spot); } catch (err) { console.error('update parse error', err); }
+    try { const { spot } = JSON.parse(e.data); ingestSpot(spot, 'flash-upd'); } catch (err) { console.error('update parse error', err); }
   });
 
   es.addEventListener('remove', (e) => {
-    try { const { id } = JSON.parse(e.data); removeSpot(id); } catch (err) { console.error('remove parse error', err); }
+    try { const { id } = JSON.parse(e.data); removeRawSpot(id); } catch (err) { console.error('remove parse error', err); }
   });
 
   // EventSource handles reconnection automatically with exponential back-off;
