@@ -589,7 +589,7 @@ table {
 .col-time     { width: 72px; }
 .col-source   { width: 72px; }
 .col-activator{ width: 154px; }
-.col-freq     { width: 120px; }
+.col-freq     { width: 160px; }
 .col-band     { width: 58px; }
 .col-mode     { width: 62px; }
 .col-ref      { width: 142px; }
