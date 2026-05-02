@@ -594,7 +594,7 @@ table {
 .col-mode     { width: 62px; }
 .col-ref      { width: 142px; }
 .col-name     { width: auto; }
-.col-cont     { width: 54px; }
+.col-cont     { width: 54px; text-align: center; }
 
 tbody tr {
   border-bottom: 1px solid rgba(30,70,55,.10);
@@ -657,6 +657,7 @@ td.col-cont {
   text-transform: uppercase;
   padding-left: 7px;
   padding-right: 7px;
+  text-align: center;
 }
 
 /* reference — secondary, monospace-adjacent */
