@@ -63,7 +63,7 @@ const connLabel  = document.getElementById('conn-label');
 const statsBar   = document.getElementById('stats-bar');
 const sortHeads  = document.querySelectorAll('.head-main th.sortable');
 const SEARCH_COLS = ['activator', 'reference', 'name'];
-const SORT_COLS = new Set(['time', 'source', 'band', 'frequency', 'mode', 'activator', 'continent', 'reference']);
+const SORT_COLS = new Set(['time', 'source', 'band', 'frequency', 'mode', 'activator', 'reference']);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
