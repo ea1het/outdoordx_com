@@ -698,11 +698,25 @@ function renderTable() {
 
 /** Enforces DOM row order to match current sort/filter state without full rebuild. */
 function enforceSortedDomOrder() {
+  cleanupRenderedRows();
   const visibleSortedIds = sortedSpots().filter(spotVisible).map(s => s.id);
   visibleSortedIds.forEach(id => {
     const row = tbody.querySelector(`#row-${CSS.escape(id)}`);
     if (!row) return;
     tbody.insertBefore(row, emptyRow);
+  });
+}
+
+/** Removes rendered rows that are no longer present in state and duplicate row ids. */
+function cleanupRenderedRows() {
+  const seen = new Set();
+  tbody.querySelectorAll('tr[data-id]').forEach(row => {
+    const id = row.dataset.id;
+    if (!id || !spots.has(id) || seen.has(id)) {
+      row.remove();
+      return;
+    }
+    seen.add(id);
   });
 }
 
