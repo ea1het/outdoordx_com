@@ -509,6 +509,16 @@ function findOperationKeyByDisplayIdentity(spot) {
   return null;
 }
 
+/** Finds all operation keys sharing the same screen-level identity. */
+function findOperationKeysByDisplayIdentity(spot) {
+  const target = displayIdentityKey(spot);
+  const keys = [];
+  for (const [key, rowSpot] of spots.entries()) {
+    if (displayIdentityKey(rowSpot) === target) keys.push(key);
+  }
+  return keys;
+}
+
 /** Returns all rendered spots sorted by current table sort configuration. */
 function sortedSpots() {
   const dir = tableState.sortDir === 'asc' ? 1 : -1;
@@ -824,12 +834,19 @@ function removeSpot(id) {
 /** Upserts an operation-keyed spot and applies minimal UI update/reposition logic. */
 function upsertOperationSpot(incoming, flashClass = null) {
   const keyed = operationKey(incoming);
-  const matched = findOperationKeyByDisplayIdentity(incoming);
-  const key = matched || keyed;
+  const matchingKeys = findOperationKeysByDisplayIdentity(incoming);
+  const key = matchingKeys[0] || keyed;
   const next = { ...incoming, id: key };
   const prev = spots.get(key) || null;
 
-  if (matched && matched !== keyed) {
+  // Collapse stale duplicate keys with same identity down to one canonical key.
+  matchingKeys.slice(1).forEach(dupKey => {
+    spots.delete(dupKey);
+    currentRawByOperation.delete(dupKey);
+    removeSpot(dupKey);
+  });
+
+  if (key !== keyed && spots.has(keyed)) {
     const previouslyMappedRaw = currentRawByOperation.get(keyed);
     if (previouslyMappedRaw != null) operationByRawId.delete(previouslyMappedRaw);
     spots.delete(keyed);
