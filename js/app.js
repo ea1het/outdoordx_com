@@ -242,6 +242,10 @@ const dxccNameAliases = {
   'rodriguez i':    'mu',   // "Rodriguez I." → Rodrigues Island, part of Mauritius
   'rodrigues island': 'mu',
   'bonaire': 'bq',
+  'western kiribati': 'ki',
+  'central kiribati': 'ki',
+  'eastern kiribati': 'ki',
+  'banaba island': 'ki',
 };
 
 // Longer prefixes must appear before any shorter prefix they start with
@@ -268,6 +272,7 @@ const callsignPrefixMap = [
   ['ZS', 'za'], ['3B8', 'mu'], ['3B9', 'mu'], ['5R', 'mg'], ['5H', 'tz'], ['5N', 'ng'],
   ['VU', 'in'], ['HS', 'th'], ['9M', 'my'], ['YB', 'id'], ['DU', 'ph'], ['BY', 'cn'], ['BD', 'cn'], ['BH', 'cn'], ['BI', 'cn'], ['BG', 'cn'],
   ['HL', 'kr'], ['DS', 'kr'], ['6K', 'kr'], ['6L', 'kr'], ['6M', 'kr'], ['6N', 'kr'],
+  ['T30', 'ki'], ['T31', 'ki'], ['T32', 'ki'], ['T33', 'ki'],
 ];
 
 function flagCodeFromDxccName(dxccName) {
