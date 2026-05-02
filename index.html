@@ -6,7 +6,7 @@
   <!-- CSP: locks down resource origins; connect-src allows the BFF SSE stream
        (production URL + localhost for local dev). Tighten if new origins are added. -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://bff.outdoordx.net http://localhost:9000; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" />
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://bff.outdoordx.net http://localhost:9000 https://api.github.com; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" />
   <title>OutdoorDX — Real-time Field Activations</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -232,7 +232,7 @@
   </section>
 
   <div class="credit-note">
-    <div>Outdoor DX — Field Radio Aggregator</div>
+    <div id="credit-title">OutdoorDX — Field Radio Aggregator</div>
     <div>Built with <span class="credit-heart">♥</span> by <a href="https://ea1het.com" target="_blank" rel="noopener">EA1HET</a></div>
   </div>
 

@@ -20,6 +20,8 @@ const READY_URL = (function () {
   return 'https://bff.outdoordx.net/ready';
 })();
 
+const GITHUB_LATEST_COMMIT_URL = 'https://api.github.com/repos/ea1het/outdoordx_com/commits/gh-pages';
+
 // ── State ───────────────────────────────────────────────────────────────────
 const spots = new Map();   // operationKey → rendered spot (stable row id)
 const operationByRawId = new Map(); // raw SSE id → operationKey
@@ -63,6 +65,7 @@ const emptyRow   = document.getElementById('empty-row');
 const connDot    = document.getElementById('conn-dot');
 const connLabel  = document.getElementById('conn-label');
 const statsBar   = document.getElementById('stats-bar');
+const creditTitle = document.getElementById('credit-title');
 const sortHeads  = document.querySelectorAll('.head-main th.sortable');
 const SEARCH_COLS = ['activator', 'reference', 'name'];
 const SORT_COLS = new Set(['time', 'source', 'band', 'frequency', 'mode', 'activator', 'reference']);
@@ -742,6 +745,24 @@ function startReadyStatusPolling() {
   setInterval(refreshReadyStatus, 120000);
 }
 
+/** Updates credit title with latest GitHub short SHA; omits suffix on any failure. */
+async function updateCreditTitleWithGitSha() {
+  if (!creditTitle) return;
+  const base = 'OutdoorDX';
+  const suffix = ' — Field Radio Aggregator';
+  creditTitle.textContent = base + suffix;
+  try {
+    const res = await fetch(GITHUB_LATEST_COMMIT_URL, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const sha = typeof data?.sha === 'string' ? data.sha.trim() : '';
+    if (!sha) return;
+    creditTitle.textContent = `${base} (${sha.slice(0, 7)})${suffix}`;
+  } catch {
+    // Keep base label when GitHub request fails.
+  }
+}
+
 // ── Spot management ───────────────────────────────────────────────────────────
 
 /** Inserts a rendered row in sorted position among currently visible rows. */
@@ -1142,4 +1163,5 @@ updateSortHeaderUi();
 applyUiState(loadUiState());
 connect();
 startReadyStatusPolling();
+updateCreditTitleWithGitSha();
 checkChangelog();
