@@ -1,5 +1,9 @@
 # Changelog
 
+2026-05-03
+
+- Added support for new DXCC (Corsica, FR)
+
 2026-05-02
 
 - Improved visualization of data being refreshed by backend.

@@ -276,6 +276,7 @@ const dxccNameAliases = {
   'st. vincent': 'vc',
   'st. vincent & grenadines': 'vc',
   'saint vincent and the grenadines': 'vc',
+  'corsica': 'fr',
 };
 
 // Longer prefixes must appear before any shorter prefix they start with
@@ -285,7 +286,7 @@ const callsignPrefixMap = [
   ['VE', 'ca'], ['VA', 'ca'], ['VO', 'ca'], ['VY', 'ca'],
   ['EA', 'es'], ['EB', 'es'], ['EC', 'es'], ['ED', 'es'],
   ['CT', 'pt'], ['CQ', 'pt'],
-  ['F', 'fr'], ['TM', 'fr'],
+  ['F', 'fr'], ['TK', 'fr'], ['TM', 'fr'],
   ['DL', 'de'], ['DA', 'de'], ['DB', 'de'], ['DC', 'de'], ['DD', 'de'], ['DF', 'de'], ['DG', 'de'], ['DH', 'de'], ['DJ', 'de'], ['DK', 'de'], ['DM', 'de'], ['DN', 'de'], ['DO', 'de'], ['DP', 'de'], ['DR', 'de'],
   ['I', 'it'], ['IS', 'it'], ['IU', 'it'], ['IK', 'it'], ['IZ', 'it'],
   ['G', 'gb'], ['M', 'gb'], ['2E', 'gb'], ['GM', 'gb'], ['GW', 'gb'], ['GI', 'gb'], ['MM', 'gb'],
