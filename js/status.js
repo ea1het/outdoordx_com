@@ -52,12 +52,12 @@ async function probe(url) {
 // ---------------------------------------------------------------------------
 
 // Maps a latency value to a CSS class for colour-coding:
-//   green  < 100 ms  (lat-fast)
-//   amber  < 300 ms  (lat-mid)
-//   red   >= 300 ms  (lat-slow)
+//   green  < 200 ms  (lat-fast)
+//   amber  < 500 ms  (lat-mid)
+//   red   >= 500 ms  (lat-slow)
 function latencyClass(ms) {
-  if (ms < 100) return 'lat-fast';
-  if (ms < 300) return 'lat-mid';
+  if (ms < 200) return 'lat-fast';
+  if (ms < 500) return 'lat-mid';
   return 'lat-slow';
 }
 
