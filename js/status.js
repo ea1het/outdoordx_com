@@ -1,5 +1,10 @@
 // status.js — OutdoorDX system status page
 //
+// Licensed under the Mozilla Public License 2.0.
+// This script builds the status dashboard, probes backend health endpoints,
+// and updates each status card with HTTP code, latency, payload, and timestamp.
+// Refreshing runs continuously on a fixed interval with a visible countdown.
+//
 // Probes /ready and /health on the BFF and API backends, measures round-trip
 // latency from the browser, and renders the results into cards that refresh
 // automatically every REFRESH_MS milliseconds.
@@ -13,6 +18,7 @@
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
+// Static endpoint definitions and refresh timing.
 
 // Each entry describes one backend service and the health endpoints to probe.
 const SERVICES = [
@@ -30,6 +36,7 @@ let countdownSec   = 0;
 // ---------------------------------------------------------------------------
 // Probing
 // ---------------------------------------------------------------------------
+// Network probe execution and normalized result shaping.
 
 // Fetches url and returns { ok, status, latency, body } on success or
 // { ok: false, status: null, latency, error } on network failure.
@@ -50,6 +57,7 @@ async function probe(url) {
 // ---------------------------------------------------------------------------
 // DOM helpers
 // ---------------------------------------------------------------------------
+// Card creation and DOM updates from probe results.
 
 // Maps a latency value to a CSS class for colour-coding:
 //   green  < 200 ms  (lat-fast)
@@ -122,6 +130,7 @@ function updateCard(card, result) {
 // ---------------------------------------------------------------------------
 // Refresh logic
 // ---------------------------------------------------------------------------
+// Periodic probe orchestration and countdown label updates.
 
 // Marks all cards as "checking", then fires all probes in parallel and
 // updates each card as its result arrives.
@@ -165,6 +174,7 @@ function startCountdown() {
 // ---------------------------------------------------------------------------
 // Initialisation
 // ---------------------------------------------------------------------------
+// Dashboard construction, event wiring, and first refresh cycle.
 
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('st-services');

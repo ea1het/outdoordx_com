@@ -1,9 +1,17 @@
 'use strict';
-
+//
+// Licensed under the Mozilla Public License 2.0.
+// This script powers the live spots table in the browser.
+// It connects to the BFF SSE stream, keeps one canonical row per activation,
+// applies filters/sorting/search, and renders the current view.
+// It also persists UI state and flag lookups in localStorage so reloads keep
+// user preferences and avoid repeated country-code resolution work.
+//
 // ── Config ──────────────────────────────────────────────────────────────────
 // Resolution order:
 //   1. localhost / 127.0.0.1   → local BFF on port 9000
 //   2. production              → bff.outdoordx.net
+//
 const BFF_URL = (function () {
   const h = window.location.hostname;
   if (h === 'localhost' || h === '127.0.0.1') {
@@ -23,6 +31,10 @@ const READY_URL = (function () {
 const GITHUB_LATEST_COMMIT_URL = 'https://api.github.com/repos/ea1het/outdoordx_com/commits/gh-pages';
 
 // ── State ───────────────────────────────────────────────────────────────────
+// Runtime state is split into:
+// - live spot state (`spots` and raw-id mappings)
+// - UI state (filters, sorting, search terms)
+// - auxiliary status values (users/sessions presence)
 // Canonical live UI state (one row per logical operation).
 // Key: stable `operationKey` (source + callsign + reference token)
 // Value: latest spot payload chosen for that operation.
@@ -71,17 +83,19 @@ const flagCache = (function loadFlagCache() {
 })();
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
-const tbody      = document.getElementById('spots-body');
-const emptyRow   = document.getElementById('empty-row');
-const connDot    = document.getElementById('conn-dot');
-const connLabel  = document.getElementById('conn-label');
-const statsBar   = document.getElementById('stats-bar');
+// Static references to frequently used DOM nodes.
+const tbody       = document.getElementById('spots-body');
+const emptyRow    = document.getElementById('empty-row');
+const connDot     = document.getElementById('conn-dot');
+const connLabel   = document.getElementById('conn-label');
+const statsBar    = document.getElementById('stats-bar');
 const creditTitle = document.getElementById('credit-title');
-const sortHeads  = document.querySelectorAll('.head-main th.sortable');
+const sortHeads   = document.querySelectorAll('.head-main th.sortable');
 const SEARCH_COLS = ['activator', 'reference', 'name'];
-const SORT_COLS = new Set(['time', 'source', 'band', 'frequency', 'mode', 'activator', 'reference']);
+const SORT_COLS   = new Set(['time', 'source', 'band', 'frequency', 'mode', 'activator', 'reference']);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+// Pure utility functions for formatting, normalization, and key derivation.
 
 /** Formats a frequency-like value into MHz/GHz text after normalizing to Hz. */
 function formatFreq(hz) {
@@ -507,7 +521,7 @@ function operationRefToken(spot) {
  * - Frequency may drift slightly while remaining the same activation.
  * - Time always changes with new reports and must not create new identities.
  * - Source must be included so the same callsign/reference across different
- *   providers (POTA/SOTA/WWFF/...) remains distinct.
+ *   providers (POTA/SOTA/WWFF/WWBOTA/HamAlert) remains distinct.
  */
 function operationKey(spot) {
   const source = normToken(spot.source);
@@ -858,6 +872,8 @@ async function updateCreditTitleWithGitSha() {
 }
 
 // ── Spot management ───────────────────────────────────────────────────────────
+// Incoming transport events are normalized into canonical operation identities.
+// Rendering always reflects canonical state after each event.
 
 /** Inserts a rendered row in sorted position among currently visible rows. */
 function insertRowSorted(newTr, spot) {
@@ -1007,6 +1023,11 @@ function loadInit(spotList) {
 }
 
 // ── SSE connection ─────────────────────────────────────────────────────────────
+// EventSource emits:
+// - `init`: full live snapshot used to rebuild state
+// - `add`: new or newly visible operation state
+// - `update`: refreshed state for an existing operation
+// - `remove`: removal by raw transport id (guarded against stale ids)
 
 let es = null;
 
@@ -1053,6 +1074,7 @@ function connect() {
 }
 
 // ── Filter wiring ─────────────────────────────────────────────────────────────
+// UI controls update in-memory filters/sort/search and trigger a full rerender.
 
 /** Re-renders table and stats after any filter/sort/search control change. */
 function refilter() {
@@ -1145,6 +1167,7 @@ document.getElementById('btn-clear').addEventListener('click', () => {
 });
 
 // ── Changelog modal ───────────────────────────────────────────────────────────
+// Shows the most recent changelog entry once per entry date per browser.
 
 const CHANGELOG_SEEN_KEY = 'odx:changelog_seen_v1';
 
@@ -1255,6 +1278,8 @@ async function checkChangelog() {
 })();
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+// Initializes sort UI, restores persisted UI state, starts live data feeds,
+// and checks whether the changelog modal should be shown.
 updateSortHeaderUi();
 applyUiState(loadUiState());
 connect();

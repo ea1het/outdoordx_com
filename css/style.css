@@ -1,4 +1,11 @@
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
+/* Licensed under the Mozilla Public License 2.0. */
+/* This stylesheet defines the full OutdoorDX UI:
+   - global tokens, typography, and color system
+   - layout blocks (hero, filters, table, footer, modals)
+   - interactive states (hover, active, flash, connection state)
+   - responsive behavior for narrow screens
+   Section headers separate each UI area in rendering order. */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
