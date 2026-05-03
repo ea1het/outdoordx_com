@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://bff.outdoordx.net https://api.outdoordx.net; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" />
+  <title>OutdoorDX — System Status</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+  <div class="hero">
+    <nav>
+      <div class="logo">Outdoor<span class="logo-dx">DX</span></div>
+      <a class="st-back-link" href="/">← Live spots</a>
+    </nav>
+
+    <svg class="hero-scene-top"
+         viewBox="0 0 1600 140"
+         preserveAspectRatio="none"
+         xmlns="http://www.w3.org/2000/svg"
+         aria-hidden="true">
+      <defs>
+        <linearGradient id="top-ridge-far" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#7fb2d8" stop-opacity="0.18"/>
+          <stop offset="55%" stop-color="#8ec0df" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#90c88c" stop-opacity="0.2"/>
+        </linearGradient>
+        <linearGradient id="top-ridge-near" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#263f52" stop-opacity="0.36"/>
+          <stop offset="70%" stop-color="#2d4e47" stop-opacity="0.42"/>
+          <stop offset="100%" stop-color="#2e5c43" stop-opacity="0.38"/>
+        </linearGradient>
+      </defs>
+
+      <path fill="url(#top-ridge-far)" d="M0 114 L90 98 L170 112 L280 88 L370 104 L500 80 L600 98 L720 76 L820 96 L940 74 L1060 94 L1180 76 L1300 96 L1420 80 L1520 98 L1600 88 L1600 140 L0 140 Z"/>
+      <path fill="url(#top-ridge-near)" d="M0 124 L80 106 L200 124 L330 96 L470 122 L620 102 L760 126 L920 100 L1080 126 L1230 104 L1380 126 L1500 108 L1600 122 L1600 140 L0 140 Z"/>
+      <rect x="0" y="128" width="1600" height="12" fill="#1a3026" fill-opacity="0.62"/>
+
+      <g fill="#132219" opacity="0.82">
+        <path d="M8 140 L22 102 L36 140 Z"/>
+        <path d="M30 140 L44 98 L60 140 Z"/>
+        <path d="M54 140 L71 104 L88 140 Z"/>
+        <path d="M1460 140 L1474 102 L1488 140 Z"/>
+        <path d="M1482 140 L1499 98 L1516 140 Z"/>
+        <path d="M1508 140 L1528 100 L1544 140 Z"/>
+      </g>
+
+      <g transform="translate(940, 116)">
+        <line x1="0" y1="2" x2="0" y2="-80"
+              stroke="#7aaa55" stroke-width="1.3" stroke-linecap="round"/>
+        <line x1="0" y1="-60" x2="-22" y2="4"
+              stroke="#5a8040" stroke-width="0.6" opacity="0.5"/>
+        <line x1="0" y1="-60" x2="22" y2="4"
+              stroke="#5a8040" stroke-width="0.6" opacity="0.5"/>
+        <line x1="-30" y1="-70" x2="30" y2="-70"
+              stroke="#a0c078" stroke-width="1.1"/>
+        <line x1="-22" y1="-76" x2="-22" y2="-64"
+              stroke="#90b068" stroke-width="0.9"/>
+        <line x1="-4" y1="-74" x2="-4" y2="-66"
+              stroke="#90b068" stroke-width="0.9"/>
+        <line x1="14" y1="-72" x2="14" y2="-68"
+              stroke="#90b068" stroke-width="0.9"/>
+        <line x1="26" y1="-73" x2="26" y2="-67"
+              stroke="#90b068" stroke-width="0.9"/>
+        <circle cx="-30" cy="-70" r="2" fill="none"
+                stroke="#e8960a" stroke-width="0.9" opacity="0">
+          <animate attributeName="r" values="2;32" dur="2.8s" repeatCount="indefinite" begin="0s"/>
+          <animate attributeName="opacity" values="0.7;0" dur="2.8s" repeatCount="indefinite" begin="0s"/>
+        </circle>
+        <circle cx="-30" cy="-70" r="2" fill="none"
+                stroke="#e8960a" stroke-width="0.9" opacity="0">
+          <animate attributeName="r" values="2;32" dur="2.8s" repeatCount="indefinite" begin="0.93s"/>
+          <animate attributeName="opacity" values="0.7;0" dur="2.8s" repeatCount="indefinite" begin="0.93s"/>
+        </circle>
+        <circle cx="-30" cy="-70" r="2" fill="none"
+                stroke="#e8960a" stroke-width="0.9" opacity="0">
+          <animate attributeName="r" values="2;32" dur="2.8s" repeatCount="indefinite" begin="1.86s"/>
+          <animate attributeName="opacity" values="0.7;0" dur="2.8s" repeatCount="indefinite" begin="1.86s"/>
+        </circle>
+        <line x1="0" y1="2" x2="-12" y2="10" stroke="#5a8040" stroke-width="1.1"/>
+        <line x1="0" y1="2" x2="12" y2="10" stroke="#5a8040" stroke-width="1.1"/>
+        <line x1="-12" y1="10" x2="12" y2="10" stroke="#5a8040" stroke-width="1.1"/>
+        <circle cx="-18" cy="-8" r="5.5" fill="#060d09"/>
+        <path d="M-23,-11 Q-26,-15 -22,-18 Q-18,-21 -14,-18 Q-10,-15 -13,-11"
+              stroke="#060d09" stroke-width="1.2" fill="none"/>
+        <path d="M-18,-2 L-18,14" stroke="#060d09" stroke-width="4" stroke-linecap="round"/>
+        <path d="M-18,4 L-6,8" stroke="#060d09" stroke-width="3" stroke-linecap="round"/>
+        <path d="M-18,4 L-30,7" stroke="#060d09" stroke-width="3" stroke-linecap="round"/>
+        <path d="M-18,14 L-25,24 L-16,24" stroke="#060d09" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <path d="M-18,14 L-12,22" stroke="#060d09" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="-6" y="6" width="22" height="12" rx="1.5" fill="#07130a"/>
+        <rect x="-3" y="8" width="8" height="5" rx="1" fill="#0d2218"/>
+        <rect x="-1" y="9.5" width="3" height="2" rx="0.4" fill="#1a4a2a"/>
+        <rect x="8" y="8" width="6" height="7" rx="0.5" fill="#2a1a06" opacity="0.7"/>
+        <path d="M6,11 Q4,6 0,2" stroke="#405530" stroke-width="0.7" fill="none"/>
+      </g>
+
+      <ellipse cx="910" cy="136" rx="6" ry="2.5" fill="#e8960a" opacity="0.12"/>
+    </svg>
+  </div>
+
+  <!-- ── Status page ────────────────────────────────────────────────────────── -->
+  <section id="status-page">
+
+    <div class="st-toolbar">
+      <h1 class="st-heading">System Status</h1>
+      <div class="st-toolbar-right">
+        <span class="st-countdown" id="st-countdown"></span>
+        <button class="st-refresh-btn" id="st-refresh-btn">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="st-services" id="st-services"></div>
+
+  </section>
+
+  <div class="credit-note">
+    <div id="credit-title">OutdoorDX — Field Radio Aggregator</div>
+    <div>Built with <span class="credit-heart">♥</span> by <a href="https://ea1het.com" target="_blank" rel="noopener">EA1HET</a></div>
+  </div>
+
+  <footer>
+    <span class="footer-logo">Outdoor<span class="logo-dx">DX</span></span>
+    <span>Credits/Data:
+      <a href="https://hamalert.org/stats" target="_blank" rel="noopener">HamAlert</a> ·
+      <a href="https://pota.app" target="_blank" rel="noopener">POTA</a> ·
+      <a href="https://www.sota.org.uk" target="_blank" rel="noopener">SOTA</a> ·
+      <a href="https://wwbota.org" target="_blank" rel="noopener">WWBOTA</a> ·
+      <a href="https://wwff.co" target="_blank" rel="noopener">WWFF</a>
+    </span>
+  </footer>
+
+  <script src="js/status.js"></script>
+</body>
+</html>
