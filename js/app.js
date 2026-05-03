@@ -273,6 +273,9 @@ const dxccNameAliases = {
   'central kiribati': 'ki',
   'eastern kiribati': 'ki',
   'banaba island': 'ki',
+  'st. vincent': 'vc',
+  'st. vincent & grenadines': 'vc',
+  'saint vincent and the grenadines': 'vc',
 };
 
 // Longer prefixes must appear before any shorter prefix they start with
@@ -286,6 +289,7 @@ const callsignPrefixMap = [
   ['DL', 'de'], ['DA', 'de'], ['DB', 'de'], ['DC', 'de'], ['DD', 'de'], ['DF', 'de'], ['DG', 'de'], ['DH', 'de'], ['DJ', 'de'], ['DK', 'de'], ['DM', 'de'], ['DN', 'de'], ['DO', 'de'], ['DP', 'de'], ['DR', 'de'],
   ['I', 'it'], ['IS', 'it'], ['IU', 'it'], ['IK', 'it'], ['IZ', 'it'],
   ['G', 'gb'], ['M', 'gb'], ['2E', 'gb'], ['GM', 'gb'], ['GW', 'gb'], ['GI', 'gb'], ['MM', 'gb'],
+  ['J88', 'vc'],
   ['JA', 'jp'], ['JE', 'jp'], ['JF', 'jp'], ['JG', 'jp'], ['JH', 'jp'], ['JI', 'jp'], ['JJ', 'jp'], ['JK', 'jp'], ['JL', 'jp'], ['JM', 'jp'], ['JN', 'jp'], ['JO', 'jp'], ['JR', 'jp'], ['JS', 'jp'], ['7J', 'jp'], ['7K', 'jp'],
   ['VK', 'au'], ['AX', 'au'],
   ['ZL', 'nz'],
