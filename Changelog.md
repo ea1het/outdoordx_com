@@ -1,5 +1,9 @@
 # Changelog
 
+2026-05-04
+
+- Fixed Ogasawara/Bonin Islands flag resolution to `callsignPrefixMap` and `ogasawara islands` / `bonin islands` to `dxccNameAliases`, all mapped to `jp`.
+
 2026-05-03
 
 - Added support for new DXCC (Corsica, FR)

@@ -290,6 +290,8 @@ const dxccNameAliases = {
   'st. vincent': 'vc',
   'st. vincent & grenadines': 'vc',
   'saint vincent and the grenadines': 'vc',
+  'ogasawara islands': 'jp',
+  'bonin islands': 'jp',
   'corsica': 'fr',
 };
 
@@ -305,7 +307,7 @@ const callsignPrefixMap = [
   ['I', 'it'], ['IS', 'it'], ['IU', 'it'], ['IK', 'it'], ['IZ', 'it'],
   ['G', 'gb'], ['M', 'gb'], ['2E', 'gb'], ['GM', 'gb'], ['GW', 'gb'], ['GI', 'gb'], ['MM', 'gb'],
   ['J88', 'vc'],
-  ['JA', 'jp'], ['JE', 'jp'], ['JF', 'jp'], ['JG', 'jp'], ['JH', 'jp'], ['JI', 'jp'], ['JJ', 'jp'], ['JK', 'jp'], ['JL', 'jp'], ['JM', 'jp'], ['JN', 'jp'], ['JO', 'jp'], ['JR', 'jp'], ['JS', 'jp'], ['7J', 'jp'], ['7K', 'jp'],
+  ['JA', 'jp'], ['JD', 'jp'], ['JE', 'jp'], ['JF', 'jp'], ['JG', 'jp'], ['JH', 'jp'], ['JI', 'jp'], ['JJ', 'jp'], ['JK', 'jp'], ['JL', 'jp'], ['JM', 'jp'], ['JN', 'jp'], ['JO', 'jp'], ['JR', 'jp'], ['JS', 'jp'], ['7J', 'jp'], ['7K', 'jp'],
   ['VK', 'au'], ['AX', 'au'],
   ['ZL', 'nz'],
   ['PY', 'br'], ['PP', 'br'], ['PQ', 'br'], ['PR', 'br'], ['PS', 'br'], ['PT', 'br'], ['PU', 'br'],
