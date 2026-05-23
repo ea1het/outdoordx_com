@@ -307,7 +307,7 @@ const callsignPrefixMap = [
   ['I', 'it'], ['IS', 'it'], ['IU', 'it'], ['IK', 'it'], ['IZ', 'it'],
   ['G', 'gb'], ['M', 'gb'], ['2E', 'gb'], ['GM', 'gb'], ['GW', 'gb'], ['GI', 'gb'], ['MM', 'gb'],
   ['J88', 'vc'],
-  ['JA', 'jp'], ['JD', 'jp'], ['JE', 'jp'], ['JF', 'jp'], ['JG', 'jp'], ['JH', 'jp'], ['JI', 'jp'], ['JJ', 'jp'], ['JK', 'jp'], ['JL', 'jp'], ['JM', 'jp'], ['JN', 'jp'], ['JO', 'jp'], ['JR', 'jp'], ['JS', 'jp'], ['7J', 'jp'], ['7K', 'jp'],
+  ['JA', 'jp'], ['JD', 'jp'], ['JE', 'jp'], ['JF', 'jp'], ['JG', 'jp'], ['JH', 'jp'], ['JI', 'jp'], ['JJ', 'jp'], ['JK', 'jp'], ['JL', 'jp'], ['JM', 'jp'], ['JN', 'jp'], ['JO', 'jp'], ['JP', 'jp'], ['JQ', 'jp'], ['JR', 'jp'], ['JS', 'jp'], ['7J', 'jp'], ['7K', 'jp'], ['7L', 'jp'], ['7M', 'jp'], ['7N', 'jp'],
   ['VK', 'au'], ['AX', 'au'],
   ['ZL', 'nz'],
   ['PY', 'br'], ['PP', 'br'], ['PQ', 'br'], ['PR', 'br'], ['PS', 'br'], ['PT', 'br'], ['PU', 'br'],
@@ -625,8 +625,9 @@ function buildRow(spot) {
 
   const src = sourceClass(spot.source);
   const sourceText = safeText(spot.source);
-  const bandText = safeText(spot.band);
-  const modeText = safeText(spot.mode);
+  const hasFreq = parseFrequencyHz(spot.frequency) != null;
+  const bandText = hasFreq ? safeText(spot.band) : '???';
+  const modeText = hasFreq ? safeText(spot.mode) : 'UNK';
   const contText = safeText(spot.continent);
   const nameText = safeText(spot.name);
   // modeCls drives CSS colour only; it intentionally uses the raw mode_class/mode
@@ -670,7 +671,7 @@ function buildRow(spot) {
 
   const tdFreq = document.createElement('td');
   tdFreq.className = 'col-freq';
-  tdFreq.textContent = formatFreq(spot.frequency);
+  tdFreq.textContent = hasFreq ? formatFreq(spot.frequency) : 'NO-QRG';
   tr.appendChild(tdFreq);
 
   const tdMode = document.createElement('td');
