@@ -1,5 +1,10 @@
 # Changelog
 
+2026-05-23
+
+- Added missing Japan callsign prefixes `JP`, `JQ`, `7L`, `7M`, and `7N` to `callsignPrefixMap`.
+- Spots with no frequency now display `NO-QRG` in the frequency column, `UNK` in the mode column, and `???` in the band column. The `???` band value is not present in the band filter dropdown, so it cannot be selected as a filter but is correctly excluded when any real band filter is active.
+
 2026-05-04
 
 - Fixed Ogasawara/Bonin Islands flag resolution to `callsignPrefixMap` and `ogasawara islands` / `bonin islands` to `dxccNameAliases`, all mapped to `jp`.
