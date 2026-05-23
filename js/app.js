@@ -602,12 +602,17 @@ function compareSpotsByActiveSort(a, b) {
   return 0;
 }
 
+/** Returns the effective band for a spot: 'other' when no frequency is present. */
+function effectiveBand(spot) {
+  return parseFrequencyHz(spot.frequency) == null ? 'other' : (spot.band || '');
+}
+
 /** Applies source/mode/continent/band/qrt/search filters to a spot. */
 function spotVisible(spot) {
-  if (!filters.sources.has(spot.source))            return false;
-  if (!filters.modes.has(resolveFilterMode(spot)))  return false;
-  if (!filters.continents.has(spot.continent || 'UNK')) return false;
-  if (filters.band && spot.band !== filters.band)   return false;
+  if (!filters.sources.has(spot.source))                    return false;
+  if (!filters.modes.has(resolveFilterMode(spot)))          return false;
+  if (!filters.continents.has(spot.continent || 'UNK'))    return false;
+  if (filters.band && effectiveBand(spot) !== filters.band) return false;
   if (!filters.showQrt && spot.status === 'qrt')    return false;
   if (tableState.search.activator && !normText(spot.activator).includes(tableState.search.activator)) return false;
   if (tableState.search.reference && !normText(refsText(spot)).includes(tableState.search.reference)) return false;
@@ -626,7 +631,7 @@ function buildRow(spot) {
   const src = sourceClass(spot.source);
   const sourceText = safeText(spot.source);
   const hasFreq = parseFrequencyHz(spot.frequency) != null;
-  const bandText = hasFreq ? safeText(spot.band) : '???';
+  const bandText = safeText(effectiveBand(spot));
   const modeText = (hasFreq && spot.mode && String(spot.mode).trim()) ? safeText(spot.mode) : 'UNK';
   const contText = safeText(spot.continent);
   const nameText = safeText(spot.name);
