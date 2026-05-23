@@ -627,7 +627,7 @@ function buildRow(spot) {
   const sourceText = safeText(spot.source);
   const hasFreq = parseFrequencyHz(spot.frequency) != null;
   const bandText = hasFreq ? safeText(spot.band) : '???';
-  const modeText = hasFreq ? safeText(spot.mode) : 'UNK';
+  const modeText = (hasFreq && spot.mode && String(spot.mode).trim()) ? safeText(spot.mode) : 'UNK';
   const contText = safeText(spot.continent);
   const nameText = safeText(spot.name);
   // modeCls drives CSS colour only; it intentionally uses the raw mode_class/mode
