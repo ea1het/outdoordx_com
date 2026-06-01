@@ -1,5 +1,9 @@
 # Changelog
 
+2026-06-01
+
+- Added DXCC flag resolution for three new entities: Juan Fernandez Islands (`3G` → `cl`), Faeroe Islands (`OY` → `fo`), and Market Reef (`OJ0` → `fi`).
+
 2026-05-23
 
 - Added missing Japan callsign prefixes `JP`, `JQ`, `7L`, `7M`, and `7N` to `callsignPrefixMap`.
