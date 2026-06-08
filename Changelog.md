@@ -1,5 +1,9 @@
 # Changelog
 
+2026-06-08
+
+- Added missing Australian callsign prefixes `VH`, `VI`, `VJ`, `VL`, `VM`, `VN`, and `VZ` to callsign prefix map. Previously only `VK` and `AX` were recognized, so callsigns like `VJ2L` showed no flag.
+
 2026-06-01
 
 - Added DXCC flag resolution for three new entities: Juan Fernandez Islands (`3G` → `cl`), Faeroe Islands (`OY` → `fo`), and Market Reef (`OJ0` → `fi`).

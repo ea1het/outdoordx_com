@@ -311,7 +311,7 @@ const callsignPrefixMap = [
   ['G', 'gb'], ['M', 'gb'], ['2E', 'gb'], ['GM', 'gb'], ['GW', 'gb'], ['GI', 'gb'], ['MM', 'gb'],
   ['J88', 'vc'],
   ['JA', 'jp'], ['JD', 'jp'], ['JE', 'jp'], ['JF', 'jp'], ['JG', 'jp'], ['JH', 'jp'], ['JI', 'jp'], ['JJ', 'jp'], ['JK', 'jp'], ['JL', 'jp'], ['JM', 'jp'], ['JN', 'jp'], ['JO', 'jp'], ['JP', 'jp'], ['JQ', 'jp'], ['JR', 'jp'], ['JS', 'jp'], ['7J', 'jp'], ['7K', 'jp'], ['7L', 'jp'], ['7M', 'jp'], ['7N', 'jp'],
-  ['VK', 'au'], ['AX', 'au'],
+  ['VH', 'au'], ['VI', 'au'], ['VJ', 'au'], ['VK', 'au'], ['VL', 'au'], ['VM', 'au'], ['VN', 'au'], ['VZ', 'au'], ['AX', 'au'],
   ['ZL', 'nz'],
   ['PY', 'br'], ['PP', 'br'], ['PQ', 'br'], ['PR', 'br'], ['PS', 'br'], ['PT', 'br'], ['PU', 'br'],
   ['LU', 'ar'], ['LW', 'ar'], ['CX', 'uy'], ['CE', 'cl'], ['3G', 'cl'],
