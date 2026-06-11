@@ -303,7 +303,7 @@ const dxccNameAliases = {
 const callsignPrefixMap = [
   ['K', 'us'], ['N', 'us'], ['W', 'us'], ['AA', 'us'], ['AB', 'us'], ['AC', 'us'], ['AD', 'us'], ['AE', 'us'], ['AF', 'us'], ['AG', 'us'], ['AI', 'us'], ['AJ', 'us'], ['AK', 'us'], ['AL', 'us'], ['KM', 'us'], ['KH6', 'us'],
   ['VE', 'ca'], ['VA', 'ca'], ['VO', 'ca'], ['VY', 'ca'],
-  ['EA', 'es'], ['EB', 'es'], ['EC', 'es'], ['ED', 'es'],
+  ['EA', 'es'], ['EB', 'es'], ['EC', 'es'], ['ED', 'es'], ['EE', 'es'], ['EF', 'es'], ['EG', 'es'], ['EH', 'es'], ['AM', 'es'], ['AN', 'es'], ['AO', 'es'],
   ['CT', 'pt'], ['CQ', 'pt'],
   ['F', 'fr'], ['TK', 'fr'], ['TM', 'fr'],
   ['DL', 'de'], ['DA', 'de'], ['DB', 'de'], ['DC', 'de'], ['DD', 'de'], ['DF', 'de'], ['DG', 'de'], ['DH', 'de'], ['DJ', 'de'], ['DK', 'de'], ['DM', 'de'], ['DN', 'de'], ['DO', 'de'], ['DP', 'de'], ['DR', 'de'],

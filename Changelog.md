@@ -1,5 +1,9 @@
 # Changelog
 
+2026-06-11
+
+- Fixed callsigns using Spanish special-license prefixes, covering the full ITU-allocated Spanish prefix block.
+
 2026-06-08
 
 - Added missing Australian callsign prefixes `VH`, `VI`, `VJ`, `VL`, `VM`, `VN`, and `VZ` to callsign prefix map. Previously only `VK` and `AX` were recognized, so callsigns like `VJ2L` showed no flag.
