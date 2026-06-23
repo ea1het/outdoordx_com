@@ -1,5 +1,9 @@
 # Changelog
 
+2026-06-24
+
+- Added Polish special-event and auxiliary callsign prefixes `HF`, `SN`, `SO`, `SQ`, `SR`, and `3Z` to the prefix map; previously only `SP` was recognized, so callsigns like `HF0PAS` showed no flag.
+
 2026-06-11
 
 - Fixed callsigns using Spanish special-license prefixes, covering the full ITU-allocated Spanish prefix block.

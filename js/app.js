@@ -318,7 +318,7 @@ const callsignPrefixMap = [
   ['PJ4', 'bq'],
   ['PA', 'nl'], ['PB', 'nl'], ['PC', 'nl'], ['PD', 'nl'], ['PE', 'nl'], ['PG', 'nl'], ['PH', 'nl'], ['PI', 'nl'],
   ['ON', 'be'], ['OE', 'at'], ['HB', 'ch'], ['SM', 'se'], ['LA', 'no'], ['OJ0', 'fi'], ['OH', 'fi'], ['OY', 'fo'], ['OZ', 'dk'],
-  ['SP', 'pl'], ['OK', 'cz'], ['OL', 'cz'], ['OM', 'sk'], ['S5', 'si'], ['9A', 'hr'], ['YO', 'ro'], ['YU', 'rs'], ['YT', 'rs'], ['YZ', 'rs'], ['LZ', 'bg'], ['SV', 'gr'], ['TA', 'tr'],
+  ['SP', 'pl'], ['SN', 'pl'], ['SO', 'pl'], ['SQ', 'pl'], ['SR', 'pl'], ['HF', 'pl'], ['3Z', 'pl'], ['OK', 'cz'], ['OL', 'cz'], ['OM', 'sk'], ['S5', 'si'], ['9A', 'hr'], ['YO', 'ro'], ['YU', 'rs'], ['YT', 'rs'], ['YZ', 'rs'], ['LZ', 'bg'], ['SV', 'gr'], ['TA', 'tr'],
   ['UA', 'ru'], ['R', 'ru'], ['RA', 'ru'], ['RK', 'ru'], ['RN', 'ru'], ['RU', 'ru'], ['RX', 'ru'], ['RW', 'ru'],
   ['ZS', 'za'], ['3B8', 'mu'], ['3B9', 'mu'], ['5R', 'mg'], ['5H', 'tz'], ['5N', 'ng'],
   ['VU', 'in'], ['HS', 'th'], ['9M', 'my'], ['YB', 'id'], ['DU', 'ph'], ['BY', 'cn'], ['BD', 'cn'], ['BH', 'cn'], ['BI', 'cn'], ['BG', 'cn'],
